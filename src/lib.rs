@@ -11,6 +11,29 @@ mod tests {
     }
 
     #[test]
+    fn test_bool_type() {
+        let t = BoxrType::BOOL(true);
+        assert!(t.bool());
+        let f = BoxrType::BOOL(false);
+        assert!(!f.bool());
+        assert!(t.bool() != f.bool());
+        assert!(!t.bool() == f.bool());
+
+        let t_from_raw = BoxrType::from(true);
+        let f_from_raw = BoxrType::from(false);
+        assert!(t.bool() == t_from_raw.bool());
+        assert!(f.bool() == f_from_raw.bool());
+
+        assert!(BoxrType::INT(0).bool());
+        assert!(!BoxrType::INT(420).bool());
+
+        assert!(BoxrType::STR("").bool());
+        assert!(!BoxrType::STR("not empty").bool());
+
+        // Todo test lists
+    }
+
+    #[test]
     fn test_cons_cell() {
         let a = BoxrType::cons_cell(BoxrType::INT(5), BoxrType::INT(3));
         assert!(a.decompose() == Some((BoxrType::INT(5), BoxrType::INT(3))));

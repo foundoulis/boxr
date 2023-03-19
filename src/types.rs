@@ -1,8 +1,9 @@
-use std::fmt::{Display, Debug};
+use std::fmt::{Debug, Display};
 
 #[derive(PartialEq, Eq, Clone)]
 pub enum BoxrType<'a> {
     NIL,
+    BOOL(bool),
     INT(i64),
     STR(&'a str),
     CELL(Box<BoxrType<'a>>, Box<BoxrType<'a>>),
@@ -40,7 +41,31 @@ impl<'a> BoxrType<'a> {
     pub fn top(&mut self) -> Option<(BoxrType<'a>, BoxrType<'a>)> {
         match self {
             BoxrType::CELL(car, cdr) => Some((*car.clone(), *cdr.clone())),
-            _ => None
+            _ => None,
+        }
+    }
+    pub fn bool(&self) -> bool {
+        match self {
+            BoxrType::BOOL(b) => *b,
+            BoxrType::NIL => false,
+            BoxrType::CELL(_, _) => true,
+            BoxrType::INT(i) => *i == 0,
+            BoxrType::STR(s) => *s == "",
+        }
+    }
+}
+
+impl<'a> Into<bool> for BoxrType<'a> {
+    fn into(self) -> bool {
+        self.bool()
+    }
+}
+
+impl<'a> From<bool> for BoxrType<'a> {
+    fn from(value: bool) -> Self {
+        match value {
+            true => BoxrType::BOOL(true),
+            false => BoxrType::BOOL(false)
         }
     }
 }
@@ -63,7 +88,7 @@ impl<'a> Iterator for BoxrType<'a> {
             Some((car, cdr)) => {
                 *self = cdr;
                 Some(car)
-            },
+            }
             None => None,
         }
     }
@@ -79,13 +104,16 @@ impl<'a> Display for BoxrType<'a> {
                     result = format!("{} {}", result, elem);
                 }
                 write!(f, "{})", result)
-            },
+            }
             BoxrType::INT(i) => write!(f, "{}", i),
             BoxrType::STR(s) => write!(f, "{}", s),
+            BoxrType::BOOL(b) => match b {
+                true => write!(f, "#t"),
+                false => write!(f, "#f"),
+            },
         }
     }
 }
-
 impl<'a> Debug for BoxrType<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -93,6 +121,10 @@ impl<'a> Debug for BoxrType<'a> {
             BoxrType::CELL(car, cdr) => write!(f, "(cons {:?} {:?})", car, cdr),
             BoxrType::INT(i) => write!(f, "{}", i),
             BoxrType::STR(s) => write!(f, "{}", s),
+            BoxrType::BOOL(b) => match b {
+                true => write!(f, "#t"),
+                false => write!(f, "#f"),
+            },
         }
     }
 }
