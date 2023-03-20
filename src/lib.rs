@@ -24,11 +24,11 @@ mod tests {
         assert!(t.bool() == t_from_raw.bool());
         assert!(f.bool() == f_from_raw.bool());
 
-        assert!(BoxrType::INT(0).bool());
-        assert!(!BoxrType::INT(420).bool());
+        assert!(!BoxrType::INT(0).bool());
+        assert!(BoxrType::INT(420).bool());
 
-        assert!(BoxrType::STR("").bool());
-        assert!(!BoxrType::STR("not empty").bool());
+        assert!(!BoxrType::STR("").bool());
+        assert!(BoxrType::STR("not empty").bool());
 
         // Todo test lists
     }
@@ -46,7 +46,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cons_cell_display() {
+    fn test_cons_cell_debug() {
         let cell = BoxrType::cons_cell(BoxrType::NIL, BoxrType::INT(10));
         assert_eq!("(cons NIL 10)", format!("{:?}", cell));
         let two_cells = BoxrType::cons_cell(
@@ -54,6 +54,21 @@ mod tests {
             BoxrType::INT(1),
         );
         assert_eq!("(cons (cons 2 1) 1)", format!("{:?}", two_cells));
+    }
+
+    #[test]
+    fn test_cons_cell_display() {
+        let cell: BoxrType = vec![BoxrType::NIL, BoxrType::INT(10)].into_iter().collect();
+        assert_eq!("('() 10)", format!("{}", cell));
+        let two_cells: BoxrType = vec![
+            vec![BoxrType::INT(2), BoxrType::INT(1)]
+                .into_iter()
+                .collect::<BoxrType>(),
+            BoxrType::INT(1),
+        ]
+        .into_iter()
+        .collect();
+        assert_eq!("((2 1) 1)", format!("{}", two_cells));
     }
 
     #[test]

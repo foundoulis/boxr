@@ -49,8 +49,8 @@ impl<'a> BoxrType<'a> {
             BoxrType::BOOL(b) => *b,
             BoxrType::NIL => false,
             BoxrType::CELL(_, _) => true,
-            BoxrType::INT(i) => *i == 0,
-            BoxrType::STR(s) => *s == "",
+            BoxrType::INT(i) => *i != 0,
+            BoxrType::STR(s) => *s != "",
         }
     }
 }
@@ -65,7 +65,7 @@ impl<'a> From<bool> for BoxrType<'a> {
     fn from(value: bool) -> Self {
         match value {
             true => BoxrType::BOOL(true),
-            false => BoxrType::BOOL(false)
+            false => BoxrType::BOOL(false),
         }
     }
 }
