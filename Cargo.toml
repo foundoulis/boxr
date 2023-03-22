@@ -5,7 +5,11 @@ edition = "2021"
 
 [[bin]]
 name = "boxr"
-path = "src/main.rs"
+path = "src/main-cli.rs"
+
+[[bin]]
+name = "boxr-repl"
+path = "src/main-repl.rs"
 
 [lib]
 name = "boxr"
