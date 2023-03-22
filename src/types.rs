@@ -70,6 +70,21 @@ impl<'a> From<bool> for BoxrType<'a> {
     }
 }
 
+impl<'a> From<i64> for BoxrType<'a> {
+    fn from(value: i64) -> Self {
+        BoxrType::INT(value)
+    }
+}
+
+impl<'a, 's> From<&'s str> for BoxrType<'a>
+where
+    's: 'a, // The string lifetime is greater than the BoxrType lifetime.
+{
+    fn from<'b>(value: &'s str) -> Self {
+        BoxrType::STR(value)
+    }
+}
+
 impl<'a> FromIterator<BoxrType<'a>> for BoxrType<'a> {
     fn from_iter<T: IntoIterator<Item = BoxrType<'a>>>(iter: T) -> Self {
         let stack: Vec<BoxrType<'a>> = iter.into_iter().collect();

@@ -29,8 +29,28 @@ mod tests {
 
         assert!(!BoxrType::STR("").bool());
         assert!(BoxrType::STR("not empty").bool());
+    }
 
-        // Todo test lists
+    #[test]
+    fn test_int_type() {
+        let j = 69;
+        let from_j = BoxrType::from(j);
+        assert!(from_j == BoxrType::INT(j));
+
+        let i = BoxrType::INT(420);
+        let into_i = i.clone() as BoxrType;
+        assert!(into_i == i);
+    }
+
+    #[test]
+    fn test_str_type() {
+        let s = "Some string";
+        let from_s = BoxrType::from(s);
+        assert!(from_s == BoxrType::from(s));
+
+        let t = BoxrType::STR("Some string");
+        let into_t = t.clone() as BoxrType;
+        assert!(into_t == t);
     }
 
     #[test]
