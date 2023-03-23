@@ -1,8 +1,10 @@
 pub mod errors;
+pub mod lexer;
+pub mod parser;
 pub mod types;
 
 #[cfg(test)]
-mod tests {
+mod types_tests {
     use crate::types::BoxrType;
 
     #[test]
@@ -136,5 +138,75 @@ mod tests {
                 ))
         );
         assert!(cons_list_iter.next() == None);
+    }
+}
+
+#[cfg(test)]
+mod lexer_tests {
+    use crate::lexer::lex;
+    use crate::parser::ControlToken;
+
+    #[test]
+    fn test_lexer_empty() {
+        let lexer_raw = lex("".to_string());
+        println!("{:?}", lexer_raw);
+        let mut lexer = lexer_raw.iter();
+        assert!(lexer.next() == None);
+        assert!(lexer_raw.len() == 0);
+    }
+
+    #[test]
+    fn test_lexer_simple() {
+        let lexer_raw = lex("(+ 1 2)".to_string());
+        println!("{:?}", lexer_raw);
+        let mut lexer = lexer_raw.iter();
+        assert!(lexer.next() == Some(&ControlToken::LPAREN));
+        assert!(lexer.next() == Some(&ControlToken::SYMBOL("+".to_string())));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(1)));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(2)));
+        assert!(lexer.next() == Some(&ControlToken::RPAREN));
+        assert!(lexer.next() == None);
+    }
+
+    #[test]
+    fn test_lexer_with_whitespace() {
+        let lexer_raw = lex("  (+ 1 2)  ".to_string());
+
+        println!("{:?}", lexer_raw);
+        let mut lexer = lexer_raw.iter();
+        assert!(lexer.next() == Some(&ControlToken::LPAREN));
+        assert!(lexer.next() == Some(&ControlToken::SYMBOL("+".to_string())));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(1)));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(2)));
+        assert!(lexer.next() == Some(&ControlToken::RPAREN));
+        assert!(lexer.next() == None);
+    }
+
+    #[test]
+    fn test_lexer_with_comments() {
+        let lexer_raw = lex("  (+ 1 2) ; comment".to_string());
+        println!("{:?}", lexer_raw);
+        let mut lexer = lexer_raw.iter();
+        assert!(lexer.next() == Some(&ControlToken::LPAREN));
+        assert!(lexer.next() == Some(&ControlToken::SYMBOL("+".to_string())));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(1)));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(2)));
+        assert!(lexer.next() == Some(&ControlToken::RPAREN));
+        assert!(lexer.next() == None);
+    }
+
+    #[test]
+    fn test_lexer_with_comments_and_whitespace() {
+        let lexer_raw = lex(" (+ 1 2) ; comment
+
+        "
+        .to_string());
+        println!("{:?}", lexer_raw);
+        let mut lexer = lexer_raw.iter();
+        assert!(lexer.next() == Some(&ControlToken::LPAREN));
+        assert!(lexer.next() == Some(&ControlToken::SYMBOL("+".to_string())));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(1)));
+        assert!(lexer.next() == Some(&ControlToken::INTEGER(2)));
+        assert!(lexer.next() == Some(&ControlToken::RPAREN));
     }
 }
