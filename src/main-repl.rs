@@ -1,4 +1,4 @@
-use boxr::lexer::lex;
+use boxr::{lexer::lex, parser::parse};
 use linefeed::Interface;
 
 fn main() {
@@ -9,6 +9,7 @@ fn main() {
             linefeed::ReadResult::Input(line) => {
                 let lexer_raw = lex(line);
                 println!("{:?}", lexer_raw);
+                println!("{:?}", parse(lexer_raw));
             }
             linefeed::ReadResult::Eof => break,
             linefeed::ReadResult::Signal(_) => break,
