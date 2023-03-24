@@ -1,0 +1,45 @@
+use std::str::FromStr;
+use crate::Value;
+use crate::Expr;
+
+grammar;
+
+pub Exprs: Vec<Box<Expr>> = {
+    <e:Expr> => vec![e],
+    <e:Expr> <es:Exprs> => {
+        let mut res = vec![e];
+        res.extend(es);
+        res
+    },
+};
+
+Expr: Box<Expr> = {
+    <v:Value> => Box::new(Expr::Value(v)),
+    "(" <e:Exprs> ")" => Box::new(Expr::List(e)),
+    "'" "(" <e:Exprs> ")" => Box::new(Expr::QuotedList(e)),
+    "'" "()" => Box::new(Expr::Value(Value::NIL)),
+};
+
+Value: Value = {
+    <i:Num> => Value::Int(i),
+    <f:Float> => Value::Float(f),
+    <b:Boolean> => Value::Boolean(b),
+    <id:Ident> => Value::Symbol(id),
+    <com:Comment> => Value::Comment(com),
+    <s:LString> => Value::String(s),
+};
+
+Num: i64 = <n:r#"-?[0-9]+([0-9]+)?"#> => i64::from_str(n).unwrap();
+
+Float: f64 = <f:r#"(?:-?[0-9]+[\.][0-9]*)|(?:-?[0-9]*[\.][0-9]+)"#> => f64::from_str(f).unwrap();
+
+Boolean: bool = {
+    "#t" => true,
+    "#f" => false,
+};
+
+Ident: String = <id:r#"([^.\s'"\(\);0-9\-][^\s'"\(\);]*|\-)"#> => id.to_string();
+
+LString: String = <s:r#""(?:[^"\\]|\\.)*""#> => s.to_string();
+
+Comment: String = <com:r#";.*"#> => com.to_string();
