@@ -18,6 +18,7 @@ Expr: Box<Expr> = {
     "(" <e:Exprs> ")" => Box::new(Expr::List(e)),
     "'" "(" <e:Exprs> ")" => Box::new(Expr::QuotedList(e)),
     "'" "()" => Box::new(Expr::Value(Value::NIL)),
+    "()" => Box::new(Expr::Value(Value::NIL)),
 };
 
 Value: Value = {
