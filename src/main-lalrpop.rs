@@ -1,7 +1,8 @@
+use crate::slyther::ExprsParser;
 use lalrpop_util::lalrpop_mod;
+use linefeed::Interface;
 
 lalrpop_mod!(pub slyther);
-use crate::slyther::ExprsParser;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
@@ -22,8 +23,17 @@ pub enum Value {
 }
 
 fn main() {
-    let input = r#"(8 1 (- 2 3) (* 4.0 5) '(6 7 8) #t #f "stringy" '()) ; comment"#;
+    let reader = Interface::new("boxr").unwrap();
+    reader.set_prompt("==> ").unwrap();
     let parser = ExprsParser::new();
-    let expr = parser.parse(input).unwrap();
-    println!("{:?}", expr);
+    loop {
+        match reader.read_line().unwrap() {
+            linefeed::ReadResult::Input(line) => {
+                let expr = parser.parse(&line).unwrap();
+                println!("{:?}", expr);
+            }
+            linefeed::ReadResult::Eof => break,
+            linefeed::ReadResult::Signal(_) => break,
+        }
+    }
 }
