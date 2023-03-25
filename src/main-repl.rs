@@ -1,8 +1,5 @@
-use crate::slyther::ExprsParser;
-use lalrpop_util::lalrpop_mod;
+use boxr::slyther::ExprsParser;
 use linefeed::Interface;
-
-lalrpop_mod!(pub slyther);
 
 fn main() {
     let reader = Interface::new("boxr").unwrap();
