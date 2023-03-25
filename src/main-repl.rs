@@ -1,6 +1,7 @@
 use boxr::slyther::ExprsParser;
 use linefeed::Interface;
 
+#[mutants::skip]
 fn main() {
     let reader = Interface::new("boxr").unwrap();
     reader.set_prompt("==> ").unwrap();

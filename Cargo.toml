@@ -22,4 +22,5 @@ lalrpop = "0.19.7"
 lalrpop-util = { version = "0.19.7", features = ["lexer"] }
 lazy_static = "1.4.0"
 linefeed = "0.6.0"
+mutants = "0.0.3"
 regex = "1.7.2"

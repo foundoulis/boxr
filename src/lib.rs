@@ -1,3 +1,4 @@
+pub mod errors;
 pub mod evaluator;
 pub mod scope;
 pub mod types;
@@ -79,6 +80,61 @@ mod test_evaluator {
     }
 
     #[test]
+    fn test_evaluator_string() {
+        let input = "\"1\"";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::String("\"1\"".to_string()))));
+    }
+
+    #[test]
+    fn test_evaluator_symbol() {
+        let input = "a";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Symbol("a".to_string()))));
+    }
+
+    #[test]
+    fn test_evaluator_bool() {
+        let input = "#t";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Boolean(true))));
+    }
+
+    #[test]
+    fn test_evaluator_float() {
+        let input = "1.0";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Float(1.0))));
+    }
+
+    #[test]
+    fn test_evaluator_comment() {
+        let input = ";1";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Comment(";1".to_string()))));
+    }
+
+    #[test]
     fn test_evaluator_quote() {
         let input = "'1";
         let parsed_input = ExprsParser::new().parse(input);
@@ -87,6 +143,67 @@ mod test_evaluator {
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
         assert!(expr == &Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))));
+    }
+
+    #[test]
+    fn test_evaluator_list() {
+        let input = "(+ 1 2)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(
+            expr == &Arc::new(Expr::List(vec![
+                Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
+                Arc::new(Expr::Value(Value::Int(1))),
+                Arc::new(Expr::Value(Value::Int(2))),
+            ]))
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_types {
+    use super::types::Value;
+    use std::sync::Arc;
+
+    #[test]
+    fn test_value_display() {
+        assert_eq!(format!("{}", Value::Int(1)), "1");
+        assert_eq!(format!("{}", Value::Symbol("a".to_string())), "a");
+        assert_eq!(format!("{}", Value::NIL), "'()");
+        assert_eq!(format!("{}", Value::Quoted(Arc::new(Value::Int(1)))), "'1");
+    }
+
+    #[test]
+    fn test_expr_display() {
+        assert_eq!(format!("{}", super::types::Expr::Value(Value::Int(1))), "1");
+        assert_eq!(
+            format!(
+                "{}",
+                super::types::Expr::Value(Value::Symbol("a".to_string()))
+            ),
+            "a"
+        );
+        assert_eq!(format!("{}", super::types::Expr::Value(Value::NIL)), "'()");
+        assert_eq!(
+            format!(
+                "{}",
+                super::types::Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))
+            ),
+            "'1"
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                super::types::Expr::List(vec![
+                    Arc::new(super::types::Expr::Value(Value::Int(1))),
+                    Arc::new(super::types::Expr::Value(Value::Int(2))),
+                ])
+            ),
+            "(1 2)"
+        );
     }
 }
 
