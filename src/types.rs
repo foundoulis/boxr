@@ -41,6 +41,7 @@ impl Display for Expr {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     NIL,
+    Quoted(Arc<Value>),
     Symbol(String),
     String(String),
     Boolean(bool),
@@ -59,6 +60,7 @@ impl Display for Value {
             Value::Int(i) => write!(f, "{}", i),
             Value::Float(fl) => write!(f, "{}", fl),
             Value::Comment(s) => write!(f, ";{}", s),
+            Value::Quoted(q) => write!(f, "'{}", q),
         }
     }
 }

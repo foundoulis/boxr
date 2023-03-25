@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
-use boxr::types::Value;
-use boxr::types::Expr;
+use crate::types::Value;
+use crate::types::Expr;
 
 grammar;
 
@@ -16,6 +16,7 @@ pub Exprs: Vec<Arc<Expr>> = {
 
 Expr: Arc<Expr> = {
     <v:Value> => Arc::new(Expr::Value(v)),
+    "'" <v:Value> => Arc::new(Expr::Value(Value::Quoted(Arc::new(v)))),
     "(" <e:Exprs> ")" => Arc::new(Expr::List(e)),
     "'" "(" <e:Exprs> ")" => Arc::new(Expr::QuotedList(e)),
     "'" "()" => Arc::new(Expr::Value(Value::NIL)),

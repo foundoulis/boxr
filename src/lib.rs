@@ -7,10 +7,9 @@ lalrpop_mod!(pub slyther);
 
 #[cfg(test)]
 mod test_parsing {
-    use std::sync::Arc;
-
     use super::slyther::ExprsParser;
     use super::types::{Expr, Value};
+    use std::sync::Arc;
 
     #[test]
     fn test_parsing() {
@@ -48,6 +47,46 @@ mod test_parsing {
                 ])),
             ]))
         );
+    }
+}
+
+#[cfg(test)]
+mod test_evaluator {
+    use super::slyther::ExprsParser;
+    use super::types::{Expr, Value};
+    use std::sync::Arc;
+
+    #[test]
+    fn test_evaluator_nil() {
+        let input = "'()";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::NIL)));
+    }
+
+    #[test]
+    fn test_evaluator_int() {
+        let input = "1";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Int(1))));
+    }
+
+    #[test]
+    fn test_evaluator_quote() {
+        let input = "'1";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        assert!(expr == &Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))));
     }
 }
 
