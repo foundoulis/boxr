@@ -164,7 +164,7 @@ mod test_evaluator {
 }
 
 #[cfg(test)]
-mod test_types {
+mod test_value_types {
     use super::types::Value;
     use std::sync::Arc;
 
