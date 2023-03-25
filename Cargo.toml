@@ -8,12 +8,8 @@ name = "boxr"
 path = "src/main-cli.rs"
 
 [[bin]]
-name = "boxr-repl"
+name = "boxrepl"
 path = "src/main-repl.rs"
-
-[[bin]]
-name = "boxr-lalrpop"
-path = "src/main-lalrpop.rs"
 
 [lib]
 name = "boxr"

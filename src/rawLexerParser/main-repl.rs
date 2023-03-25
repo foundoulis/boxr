@@ -1,18 +1,15 @@
-use crate::slyther::ExprsParser;
-use lalrpop_util::lalrpop_mod;
+use boxr::{lexer::lex, parser::parse};
 use linefeed::Interface;
-
-lalrpop_mod!(pub slyther);
 
 fn main() {
     let reader = Interface::new("boxr").unwrap();
     reader.set_prompt("==> ").unwrap();
-    let parser = ExprsParser::new();
     loop {
         match reader.read_line().unwrap() {
             linefeed::ReadResult::Input(line) => {
-                let expr = parser.parse(&line).unwrap();
-                println!("{:#?}", expr);
+                let lexer_raw = lex(line);
+                println!("{:?}", lexer_raw);
+                println!("{:?}", parse(lexer_raw));
             }
             linefeed::ReadResult::Eof => break,
             linefeed::ReadResult::Signal(_) => break,

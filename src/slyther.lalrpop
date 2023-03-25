@@ -1,10 +1,11 @@
 use std::str::FromStr;
-use crate::Value;
-use crate::Expr;
+use std::sync::Arc;
+use boxr::types::Value;
+use boxr::types::Expr;
 
 grammar;
 
-pub Exprs: Vec<Box<Expr>> = {
+pub Exprs: Vec<Arc<Expr>> = {
     <e:Expr> => vec![e],
     <e:Expr> <es:Exprs> => {
         let mut res = vec![e];
@@ -13,12 +14,12 @@ pub Exprs: Vec<Box<Expr>> = {
     },
 };
 
-Expr: Box<Expr> = {
-    <v:Value> => Box::new(Expr::Value(v)),
-    "(" <e:Exprs> ")" => Box::new(Expr::List(e)),
-    "'" "(" <e:Exprs> ")" => Box::new(Expr::QuotedList(e)),
-    "'" "()" => Box::new(Expr::Value(Value::NIL)),
-    "()" => Box::new(Expr::Value(Value::NIL)),
+Expr: Arc<Expr> = {
+    <v:Value> => Arc::new(Expr::Value(v)),
+    "(" <e:Exprs> ")" => Arc::new(Expr::List(e)),
+    "'" "(" <e:Exprs> ")" => Arc::new(Expr::QuotedList(e)),
+    "'" "()" => Arc::new(Expr::Value(Value::NIL)),
+    "()" => Arc::new(Expr::Value(Value::NIL)),
 };
 
 Value: Value = {
