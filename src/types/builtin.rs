@@ -355,6 +355,38 @@ impl CallFunction for BuiltinFunction {
                 }
                 Expr::Value(Value::Boolean(false))
             }
+            BuiltinFunction::Print => {
+                for arg in args {
+                    match arg {
+                        Expr::Value(value) => match value {
+                            Value::Int(i) => print!("{}", i),
+                            Value::Float(fl) => print!("{}", fl),
+                            Value::String(s) => print!("{}", s),
+                            Value::Boolean(b) => print!("{}", b),
+                            Value::NIL => print!("None"),
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::NIL)
+            }
+            BuiltinFunction::Println => {
+                for arg in args {
+                    match arg {
+                        Expr::Value(value) => match value {
+                            Value::Int(i) => println!("{}", i),
+                            Value::Float(fl) => println!("{}", fl),
+                            Value::String(s) => println!("{}", s),
+                            Value::Boolean(b) => println!("{}", b),
+                            Value::NIL => println!("None"),
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::NIL)
+            }
             _ => todo!(),
         }
     }
