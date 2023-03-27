@@ -263,6 +263,32 @@ impl CallFunction for BuiltinFunction {
                 }
                 Expr::Value(Value::Float(product))
             }
+            BuiltinFunction::Pow => {
+                let mut product = 1.0;
+                for (i, arg) in args.iter().enumerate() {
+                    match arg {
+                        Expr::Value(value) => match *value {
+                            Value::Int(int) => {
+                                if i == 0 {
+                                    product = int as f64;
+                                } else {
+                                    product = product.powf(int as f64);
+                                }
+                            }
+                            Value::Float(fl) => {
+                                if i == 0 {
+                                    product = fl;
+                                } else {
+                                    product = product.powf(fl);
+                                }
+                            }
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::Float(product))
+            }
             _ => todo!(),
         }
     }
