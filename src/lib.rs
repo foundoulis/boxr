@@ -1,6 +1,5 @@
 pub mod errors;
 pub mod evaluator;
-pub mod scope;
 pub mod types;
 
 use lalrpop_util::lalrpop_mod;
@@ -52,7 +51,10 @@ mod test_parsing {
 }
 
 #[cfg(test)]
-mod test_evaluator {
+mod test_evaluator_simple {
+    use crate::evaluator::lisp_eval;
+    use crate::types::scope::LexicalVarStorage;
+
     use super::slyther::ExprsParser;
     use super::types::{Expr, Value};
     use std::sync::Arc;
@@ -135,14 +137,29 @@ mod test_evaluator {
     }
 
     #[test]
-    fn test_evaluator_quote() {
+    fn test_evaluator_quote_int() {
         let input = "'1";
         let parsed_input = ExprsParser::new().parse(input);
         assert!(parsed_input.is_ok());
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))));
+        let expr = lisp_eval(&parsed_input[0], LexicalVarStorage::new());
+        assert!(expr.is_ok());
+        let expr = expr.unwrap();
+        assert!(expr == Expr::Value(Value::Int(1)));
+    }
+
+    #[test]
+    fn test_evaluator_quote_str() {
+        let input = "'\"1\"";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = lisp_eval(&parsed_input[0], LexicalVarStorage::new());
+        assert!(expr.is_ok());
+        let expr = expr.unwrap();
+        assert!(expr == Expr::Value(Value::String("\"1\"".to_string())));
     }
 
     #[test]
@@ -164,7 +181,89 @@ mod test_evaluator {
 }
 
 #[cfg(test)]
+mod test_evaluator_quotes {
+    use crate::evaluator::lisp_eval;
+    use crate::slyther::ExprsParser;
+    use crate::types::scope::LexicalVarStorage;
+    use crate::types::{Expr, Value};
+    use std::sync::Arc;
+
+    #[test]
+    fn test_quoted_list() {
+        let input = "'(1 2 3)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, LexicalVarStorage::new());
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(
+            result,
+            Expr::List(vec![
+                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
+                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(2))))),
+                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(3))))),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_quoted_list_nested() {
+        let input = "'(1 '2 (3 4))";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, LexicalVarStorage::new());
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(
+            result,
+            Expr::List(vec![
+                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
+                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Quoted(
+                    Arc::new(Value::Int(2))
+                ))))),
+                Arc::new(Expr::QuotedList(vec![
+                    Arc::new(Expr::Value(Value::Int(3))),
+                    Arc::new(Expr::Value(Value::Int(4))),
+                ])),
+            ])
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_evaluator_builtins {
+    use crate::{
+        evaluator::lisp_eval,
+        slyther::ExprsParser,
+        types::{scope::LexicalVarStorage, Expr, Value},
+    };
+
+    #[test]
+    fn test_simple_list_evaluation() {
+        let input = "(+ 1 2)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Float(3.0)));
+    }
+}
+
+#[cfg(test)]
 mod test_value_types {
+    use super::types::Expr;
     use super::types::Value;
     use std::sync::Arc;
 
@@ -178,28 +277,22 @@ mod test_value_types {
 
     #[test]
     fn test_expr_display() {
-        assert_eq!(format!("{}", super::types::Expr::Value(Value::Int(1))), "1");
+        assert_eq!(format!("{}", Expr::Value(Value::Int(1))), "1");
         assert_eq!(
-            format!(
-                "{}",
-                super::types::Expr::Value(Value::Symbol("a".to_string()))
-            ),
+            format!("{}", Expr::Value(Value::Symbol("a".to_string()))),
             "a"
         );
-        assert_eq!(format!("{}", super::types::Expr::Value(Value::NIL)), "'()");
+        assert_eq!(format!("{}", Expr::Value(Value::NIL)), "'()");
         assert_eq!(
-            format!(
-                "{}",
-                super::types::Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))
-            ),
+            format!("{}", Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
             "'1"
         );
         assert_eq!(
             format!(
                 "{}",
-                super::types::Expr::List(vec![
-                    Arc::new(super::types::Expr::Value(Value::Int(1))),
-                    Arc::new(super::types::Expr::Value(Value::Int(2))),
+                Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Int(1))),
+                    Arc::new(Expr::Value(Value::Int(2))),
                 ])
             ),
             "(1 2)"
@@ -209,7 +302,7 @@ mod test_value_types {
 
 #[cfg(test)]
 mod test_var_storage {
-    use super::scope::LexicalVarStorage;
+    use super::types::scope::LexicalVarStorage;
     use super::types::Value;
 
     #[test]

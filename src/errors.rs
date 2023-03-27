@@ -8,4 +8,8 @@ pub struct LexerError(pub &'static str);
 pub struct ParserError(pub &'static str);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct EvaluatorError(pub &'static str);
+pub enum EvaluatorError {
+    NotAFunction(String),
+    UndefinedSymbol(String),
+    UncallableType(String),
+}

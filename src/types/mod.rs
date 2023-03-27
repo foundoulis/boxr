@@ -1,3 +1,9 @@
+pub mod builtin;
+pub mod function;
+pub mod macros;
+pub mod scope;
+pub mod userfunctions;
+
 use std::{
     fmt::{Display, Error, Formatter},
     sync::Arc,
@@ -59,7 +65,7 @@ impl Display for Value {
             Value::Boolean(b) => write!(f, "{}", b),
             Value::Int(i) => write!(f, "{}", i),
             Value::Float(fl) => write!(f, "{}", fl),
-            Value::Comment(s) => write!(f, ";{}", s),
+            Value::Comment(s) => write!(f, "; {}", s),
             Value::Quoted(q) => write!(f, "'{}", q),
         }
     }

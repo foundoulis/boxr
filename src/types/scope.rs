@@ -1,8 +1,9 @@
-use crate::types::Value;
 use std::{
     collections::HashMap,
     ops::{Index, IndexMut},
 };
+
+use super::Value;
 
 pub struct LexicalVarStorage {
     environ: HashMap<String, Value>,
