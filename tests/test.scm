@@ -9,7 +9,7 @@
 
 (println (* 100 (/ 1 3)))
 
-(Println (/ 15))
+(pritln (/ 15))
 
 (println "Brian Foundoulis")
 

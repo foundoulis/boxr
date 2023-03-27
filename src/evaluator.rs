@@ -9,7 +9,7 @@ use crate::{
 use std::sync::Arc;
 
 pub fn lisp_eval(expr: &Expr, stg: LexicalVarStorage) -> Result<Expr, EvaluatorError> {
-    println!("Evaluating: {:?}", expr);
+    log::debug!("Evaluating: {:?}", expr);
     match expr {
         Expr::Value(value) => match value {
             Value::NIL => return Ok(Expr::Value(Value::NIL)),

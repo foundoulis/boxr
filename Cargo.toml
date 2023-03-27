@@ -20,8 +20,10 @@ lalrpop = "0.19.7"
 
 [dependencies]
 clap = { version = "4.1.13", features = ["derive"] }
+fern = { version = "0.6.2", features = ["colored"] }
 lalrpop-util = { version = "0.19.7", features = ["lexer"] }
 lazy_static = "1.4.0"
 linefeed = "0.6.0"
+log = "0.4.17"
 mutants = "0.0.3"
 regex = "1.7.2"

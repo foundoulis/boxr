@@ -1,7 +1,7 @@
-use std::fs;
-
-use boxr::{evaluator::lisp_eval, slyther::ExprsParser, types::scope::LexicalVarStorage};
+use boxr::{evaluator::lisp_eval, logger, slyther::ExprsParser, types::scope::LexicalVarStorage};
 use clap::Parser;
+use log::LevelFilter;
+use std::fs;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about)]
@@ -11,6 +11,8 @@ struct Args {
 }
 
 fn main() {
+    logger::setup_logger(LevelFilter::Info).unwrap();
+
     let args = Args::parse();
 
     let file_name = args.file;
@@ -20,7 +22,10 @@ fn main() {
     let exprs = parser.parse(&file).unwrap();
 
     for expr in exprs {
-        println!("{:?}", expr.as_ref());
-        println!("{:?}", lisp_eval(&expr, LexicalVarStorage::new()));
+        log::debug!("{:?}", expr.as_ref());
+        match lisp_eval(&expr, LexicalVarStorage::new()) {
+            Ok(_) => {}
+            Err(e) => log::error!("{:?}", e),
+        };
     }
 }

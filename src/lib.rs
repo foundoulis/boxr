@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod evaluator;
+pub mod logger;
 pub mod types;
 
 use lalrpop_util::lalrpop_mod;
