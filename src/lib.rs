@@ -316,6 +316,20 @@ mod test_evaluator_builtins {
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(0.0)));
     }
+
+    #[test]
+    fn test_modulus() {
+        let input = "(% 10 3)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Float(1.0)));
+    }
 }
 
 #[cfg(test)]
