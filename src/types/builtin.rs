@@ -145,6 +145,32 @@ impl CallFunction for BuiltinFunction {
                 }
                 Expr::Value(Value::Float(sum))
             }
+            BuiltinFunction::Sub => {
+                let mut sum = 0.0;
+                for (i, arg) in args.iter().enumerate() {
+                    match arg {
+                        Expr::Value(value) => match *value {
+                            Value::Int(int) => {
+                                if i == 0 {
+                                    sum = int as f64;
+                                } else {
+                                    sum -= int as f64;
+                                }
+                            }
+                            Value::Float(fl) => {
+                                if i == 0 {
+                                    sum = fl;
+                                } else {
+                                    sum -= fl;
+                                }
+                            }
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::Float(sum))
+            }
             _ => todo!(),
         }
     }

@@ -1,10 +1,6 @@
 use crate::errors::EvaluatorError;
 
-use super::{
-    builtin::{BuiltinFunction, BUILTINS_SET},
-    userfunctions::UserDefinedFunction,
-    Expr, Value,
-};
+use super::{builtin::BuiltinFunction, userfunctions::UserDefinedFunction, Expr, Value};
 
 pub enum Function {
     Builtin(BuiltinFunction),
