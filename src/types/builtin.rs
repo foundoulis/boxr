@@ -171,6 +171,20 @@ impl CallFunction for BuiltinFunction {
                 }
                 Expr::Value(Value::Float(sum))
             }
+            BuiltinFunction::Mul => {
+                let mut product = 1.0;
+                for arg in args {
+                    match arg {
+                        Expr::Value(value) => match value {
+                            Value::Int(i) => product *= i as f64,
+                            Value::Float(fl) => product *= fl,
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::Float(product))
+            }
             _ => todo!(),
         }
     }
