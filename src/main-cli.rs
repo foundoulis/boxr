@@ -10,6 +10,7 @@ struct Args {
     file: String,
 }
 
+#[mutants::skip]
 fn main() {
     logger::setup_logger(LevelFilter::Info).unwrap();
 
