@@ -289,6 +289,39 @@ impl CallFunction for BuiltinFunction {
                 }
                 Expr::Value(Value::Float(product))
             }
+            BuiltinFunction::Eq => {
+                let mut first = true;
+                let mut last = None;
+                for arg in args {
+                    match arg {
+                        Expr::Value(value) => match value {
+                            Value::Int(i) => {
+                                if first {
+                                    last = Some(i);
+                                    first = false;
+                                } else {
+                                    if last != Some(i) {
+                                        return Expr::Value(Value::Boolean(false));
+                                    }
+                                }
+                            }
+                            Value::Float(fl) => {
+                                if first {
+                                    last = Some(fl as i64);
+                                    first = false;
+                                } else {
+                                    if last != Some(fl as i64) {
+                                        return Expr::Value(Value::Boolean(false));
+                                    }
+                                }
+                            }
+                            _ => todo!(),
+                        },
+                        _ => todo!(),
+                    }
+                }
+                Expr::Value(Value::Boolean(true))
+            }
             _ => todo!(),
         }
     }
