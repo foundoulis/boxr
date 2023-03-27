@@ -18,7 +18,7 @@ pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
                 message
             ))
         })
-        .level(log::LevelFilter::Info)
+        .level(level)
         .chain(std::io::stdout())
         // .chain(fern::log_file("output.log")?)
         .apply()?;
