@@ -144,7 +144,7 @@ mod test_evaluator_simple {
         assert!(parsed_input.is_ok());
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
-        let expr = lisp_eval(&parsed_input[0], LexicalVarStorage::new());
+        let expr = lisp_eval(&parsed_input[0], &mut LexicalVarStorage::new());
         assert!(expr.is_ok());
         let expr = expr.unwrap();
         assert!(expr == Expr::Value(Value::Int(1)));
@@ -157,7 +157,7 @@ mod test_evaluator_simple {
         assert!(parsed_input.is_ok());
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
-        let expr = lisp_eval(&parsed_input[0], LexicalVarStorage::new());
+        let expr = lisp_eval(&parsed_input[0], &mut LexicalVarStorage::new());
         assert!(expr.is_ok());
         let expr = expr.unwrap();
         assert!(expr == Expr::Value(Value::String("\"1\"".to_string())));
@@ -197,7 +197,7 @@ mod test_evaluator_quotes {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         println!("{:?}", result);
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -219,7 +219,7 @@ mod test_evaluator_quotes {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         println!("{:?}", result);
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -255,7 +255,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(3.0)));
@@ -269,7 +269,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(-1.0)));
@@ -283,7 +283,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(24.0)));
@@ -297,7 +297,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(0.041666666666666664)));
@@ -312,7 +312,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(0.0)));
@@ -326,7 +326,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(1.0)));
@@ -340,7 +340,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Float(8.0)));
@@ -354,7 +354,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(true)));
@@ -365,7 +365,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(false)));
@@ -379,7 +379,7 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(false)));
@@ -390,10 +390,15 @@ mod test_evaluator_builtins {
         let parsed_input = parsed_input.unwrap();
         assert_eq!(parsed_input.len(), 1);
         let expr = &parsed_input[0];
-        let result = lisp_eval(expr, LexicalVarStorage::new());
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(true)));
+    }
+
+    #[test]
+    fn test_define_function() {
+        let input = "((twirl alpha beta) (print alpha) (print beta))";
     }
 }
 
@@ -440,23 +445,40 @@ mod test_value_types {
 mod test_var_storage {
     use super::types::scope::LexicalVarStorage;
     use super::types::Value;
+    use crate::evaluator::lisp_eval;
+    use crate::slyther::ExprsParser;
+    use crate::types::Expr;
 
     #[test]
     fn test_set_get() {
         let mut storage = LexicalVarStorage::new();
-        storage.put("a", Value::Int(1));
-        assert_eq!(storage.get("a"), Some(&Value::Int(1)));
+        storage.put("a", Expr::Value(Value::Int(1)));
+        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
     }
 
     #[test]
     fn test_fork() {
         let mut storage = LexicalVarStorage::new();
-        storage.put("a", Value::Int(1));
+        storage.put("a", Expr::Value(Value::Int(1)));
         let mut fork = storage.fork();
-        fork.put("b", Value::Int(2));
-        assert_eq!(storage.get("a"), Some(&Value::Int(1)));
+        fork.put("b", Expr::Value(Value::Int(2)));
+        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
         assert_eq!(storage.get("b"), None);
-        assert_eq!(fork.get("a"), Some(&Value::Int(1)));
-        assert_eq!(fork.get("b"), Some(&Value::Int(2)));
+        assert_eq!(fork.get("a"), Some(&Expr::Value(Value::Int(1))));
+        assert_eq!(fork.get("b"), Some(&Expr::Value(Value::Int(2))));
+    }
+
+    #[test]
+    fn test_define_var() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define a 1)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut storage);
+        assert!(result.is_ok());
+        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
     }
 }

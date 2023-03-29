@@ -1,6 +1,9 @@
 use crate::errors::EvaluatorError;
 
-use super::{builtin::BuiltinFunction, userfunctions::UserDefinedFunction, Expr, Value};
+use super::{
+    builtin::BuiltinFunction, scope::LexicalVarStorage, userfunctions::UserDefinedFunction, Expr,
+    Value,
+};
 
 pub enum Function {
     Builtin(BuiltinFunction),
@@ -34,14 +37,14 @@ impl TryFrom<Expr> for Function {
 }
 
 pub trait CallFunction {
-    fn call(&self, args: Vec<Expr>) -> Expr;
+    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError>;
 }
 
 impl CallFunction for Function {
-    fn call(&self, args: Vec<Expr>) -> Expr {
+    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         match &self {
-            Function::Builtin(builtin) => builtin.call(args),
-            Function::UserDefined(userdefined) => userdefined.call(args),
+            Function::Builtin(builtin) => builtin.call(args, stg),
+            Function::UserDefined(userdefined) => userdefined.call(args, stg),
             Function::Macro => unimplemented!(),
         }
     }

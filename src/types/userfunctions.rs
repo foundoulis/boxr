@@ -1,9 +1,18 @@
-use super::{function::CallFunction, Expr};
+use std::sync::Arc;
 
-pub struct UserDefinedFunction;
+use crate::errors::EvaluatorError;
+
+use super::{function::CallFunction, scope::LexicalVarStorage, Expr};
+
+#[derive(Debug, Clone)]
+pub struct UserDefinedFunction {
+    pub name: String,
+    pub args: Vec<Arc<Expr>>,
+    pub body: Vec<Expr>,
+}
 
 impl CallFunction for UserDefinedFunction {
-    fn call(&self, _args: Vec<Expr>) -> Expr {
+    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         todo!()
     }
 }

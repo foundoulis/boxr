@@ -8,8 +8,9 @@ use crate::{
 };
 use std::sync::Arc;
 
-pub fn lisp_eval(expr: &Expr, stg: LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
     log::debug!("Evaluating: {:?}", expr);
+    log::debug!("Storage: {:?}", stg);
     match expr {
         Expr::Value(value) => match value {
             Value::NIL => return Ok(Expr::Value(Value::NIL)),
@@ -20,7 +21,7 @@ pub fn lisp_eval(expr: &Expr, stg: LexicalVarStorage) -> Result<Expr, EvaluatorE
             Value::Quoted(q) => return Ok(Expr::Value(Value::clone(&q))),
             Value::Comment(_s) => return Ok(Expr::Value(Value::NIL)),
             Value::Symbol(s) => match stg.get(&s) {
-                Some(v) => return Ok(Expr::Value(v.clone())),
+                Some(v) => return Ok(Expr::clone(v)),
                 None => return Err(EvaluatorError::UndefinedSymbol(s.clone())),
             },
         },
@@ -37,29 +38,14 @@ pub fn lisp_eval(expr: &Expr, stg: LexicalVarStorage) -> Result<Expr, EvaluatorE
                 )));
             }
 
-            // The rest of the list are the arguments, evaluate them.
-            let rest_of_list: Vec<Result<Expr, EvaluatorError>> =
-                list[1..].iter().map(|a| lisp_eval(a, stg.fork())).collect();
-
-            // If any of the arguments are not Ok, return the first error.
-            if rest_of_list.iter().any(|a| a.is_err()) {
-                return Err(rest_of_list
-                    .iter()
-                    .find(|a| a.is_err())
-                    .unwrap()
-                    .as_ref()
-                    .unwrap_err()
-                    .clone());
-            }
-
             // Unwrap all the arguments into Exprs.
-            let arguments: Vec<Expr> = rest_of_list
+            let arguments: Vec<Expr> = list[1..]
                 .iter()
-                .map(|a| Expr::clone((*a).as_ref().unwrap()))
+                .map(|a| Expr::clone((*a).as_ref()))
                 .collect();
 
             // We can now call the function.
-            return Ok(Function::try_from(first_elem)?.call(arguments));
+            return Ok(Function::try_from(first_elem)?.call(arguments, stg)?);
         }
         Expr::QuotedList(list) => {
             let reg_list = Expr::List(

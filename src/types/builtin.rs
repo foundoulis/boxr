@@ -1,6 +1,11 @@
+use crate::errors::EvaluatorError;
+use crate::evaluator::lisp_eval;
+
 use super::function::CallFunction;
+use super::scope::LexicalVarStorage;
 use super::{Expr, Value};
 use lazy_static::lazy_static;
+use log::debug;
 use std::collections::{HashMap, HashSet};
 
 lazy_static! {
@@ -129,7 +134,7 @@ impl TryFrom<&str> for BuiltinFunction {
 }
 
 impl CallFunction for BuiltinFunction {
-    fn call(&self, args: Vec<Expr>) -> Expr {
+    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         match self {
             BuiltinFunction::Add => {
                 let mut sum = 0.0;
@@ -143,7 +148,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(sum))
+                Ok(Expr::Value(Value::Float(sum)))
             }
             BuiltinFunction::Sub => {
                 let mut sum = 0.0;
@@ -169,7 +174,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(sum))
+                Ok(Expr::Value(Value::Float(sum)))
             }
             BuiltinFunction::Mul => {
                 let mut product = 1.0;
@@ -183,7 +188,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(product))
+                Ok(Expr::Value(Value::Float(product)))
             }
             BuiltinFunction::Div => {
                 let mut product = 1.0;
@@ -209,7 +214,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(product))
+                Ok(Expr::Value(Value::Float(product)))
             }
             BuiltinFunction::FloorDiv => {
                 let mut product = 1.0;
@@ -235,7 +240,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(product.floor()))
+                Ok(Expr::Value(Value::Float(product.floor())))
             }
             BuiltinFunction::Mod => {
                 let mut product = 1.0;
@@ -261,7 +266,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(product))
+                Ok(Expr::Value(Value::Float(product)))
             }
             BuiltinFunction::Pow => {
                 let mut product = 1.0;
@@ -287,7 +292,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Float(product))
+                Ok(Expr::Value(Value::Float(product)))
             }
             BuiltinFunction::Eq => {
                 let mut first = true;
@@ -301,7 +306,7 @@ impl CallFunction for BuiltinFunction {
                                     first = false;
                                 } else {
                                     if last != Some(i) {
-                                        return Expr::Value(Value::Boolean(false));
+                                        return Ok(Expr::Value(Value::Boolean(false)));
                                     }
                                 }
                             }
@@ -311,7 +316,7 @@ impl CallFunction for BuiltinFunction {
                                     first = false;
                                 } else {
                                     if last != Some(fl as i64) {
-                                        return Expr::Value(Value::Boolean(false));
+                                        return Ok(Expr::Value(Value::Boolean(false)));
                                     }
                                 }
                             }
@@ -320,7 +325,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Boolean(true))
+                Ok(Expr::Value(Value::Boolean(true)))
             }
             BuiltinFunction::Neq => {
                 let mut first = true;
@@ -334,7 +339,7 @@ impl CallFunction for BuiltinFunction {
                                     first = false;
                                 } else {
                                     if last != Some(i) {
-                                        return Expr::Value(Value::Boolean(true));
+                                        return Ok(Expr::Value(Value::Boolean(true)));
                                     }
                                 }
                             }
@@ -344,7 +349,7 @@ impl CallFunction for BuiltinFunction {
                                     first = false;
                                 } else {
                                     if last != Some(fl as i64) {
-                                        return Expr::Value(Value::Boolean(true));
+                                        return Ok(Expr::Value(Value::Boolean(true)));
                                     }
                                 }
                             }
@@ -353,7 +358,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::Boolean(false))
+                Ok(Expr::Value(Value::Boolean(false)))
             }
             BuiltinFunction::Print => {
                 for arg in args {
@@ -369,7 +374,7 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::NIL)
+                Ok(Expr::Value(Value::NIL))
             }
             BuiltinFunction::Println => {
                 for arg in args {
@@ -385,7 +390,28 @@ impl CallFunction for BuiltinFunction {
                         _ => todo!(),
                     }
                 }
-                Expr::Value(Value::NIL)
+                Ok(Expr::Value(Value::NIL))
+            }
+            BuiltinFunction::Define => {
+                debug!("Defining function: {:?}", args);
+                match &args[0] {
+                    Expr::Value(Value::Symbol(s)) => {
+                        // set the variable
+                        debug!("Setting variable {} to {:?}", s, args[1]);
+                        stg.put(s.as_str(), args[1].clone());
+                    }
+                    Expr::List(list) => {
+                        // set the function
+                        todo!();
+                    }
+                    _ => {
+                        return Err(EvaluatorError::BadFunctionDefinition(
+                            "First arg cannot be a quoted list.".to_string(),
+                        ))
+                    }
+                };
+
+                Ok(Expr::Value(Value::NIL))
             }
             _ => todo!(),
         }
