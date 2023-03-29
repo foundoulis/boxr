@@ -49,8 +49,8 @@ impl CallFunction for Function {
     fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         match &self {
             Function::Builtin(builtin) => builtin.call(args, stg),
-            Function::UserDefined(userdefined) => userdefined.call(args, stg),
             Function::Macro(builtin_macro) => builtin_macro.call(args, stg),
+            Function::UserDefined(userdefined) => userdefined.call(args, stg),
         }
     }
 }

@@ -5,7 +5,7 @@ use super::function::CallFunction;
 use super::scope::LexicalVarStorage;
 use super::{Expr, Value};
 use lazy_static::lazy_static;
-use log::debug;
+use log;
 use std::collections::{HashMap, HashSet};
 
 lazy_static! {
@@ -443,12 +443,14 @@ impl CallFunction for BuiltinMacro {
     fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         match self {
             BuiltinMacro::Define => {
-                debug!("Defining function: {:?}", args);
+                log::debug!("Defining function: {:?}", args);
                 match &args[0] {
                     Expr::Value(Value::Symbol(s)) => {
+                        // evalute the second arg
+                        let second = lisp_eval(&args[1], stg)?;
                         // set the variable
-                        debug!("Setting variable {} to {:?}", s, args[1]);
-                        stg.put(s.as_str(), args[1].clone());
+                        log::debug!("Setting variable {} to {:?}", s, second);
+                        stg.put(s.as_str(), second);
                     }
                     Expr::List(_list) => {
                         // set the function

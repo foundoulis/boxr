@@ -506,4 +506,51 @@ mod test_builtin_macro {
         assert_eq!(results[0], Expr::Value(Value::NIL));
         assert_eq!(results[1], Expr::Value(Value::Int(1)));
     }
+
+    #[test]
+    fn test_define_var_hard_second_arg() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define a (+ 1 2)) a";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 2);
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Vec<_>>();
+        assert!(results.iter().all(|result| result.is_ok()));
+        let results = results
+            .into_iter()
+            .map(|result| result.unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0], Expr::Value(Value::NIL));
+        assert_eq!(results[1], Expr::Value(Value::Float(3.0)));
+    }
+
+    #[test]
+    fn test_define_var_second_arg_var() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define a 1) (define b (+ a 10)) b";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 3);
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Vec<_>>();
+        assert!(results.iter().all(|result| result.is_ok()));
+        let results = results
+            .into_iter()
+            .map(|result| result.unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0], Expr::Value(Value::NIL));
+        assert_eq!(results[1], Expr::Value(Value::NIL));
+        assert_eq!(results[2], Expr::Value(Value::Float(11.0)));
+    }
 }
