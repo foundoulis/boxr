@@ -38,14 +38,21 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
                 )));
             }
 
-            // Unwrap all the arguments into Exprs.
-            let arguments: Vec<Expr> = list[1..]
-                .iter()
-                .map(|a| Expr::clone((*a).as_ref()))
-                .collect();
+            // look up what we are doing based on the first element.
+            match Function::try_from(first_elem) {
+                // If it was found to be a function, call it.
+                Ok(function) => {
+                    // Unwrap all the arguments into Exprs.
+                    let mut arguments: Vec<Expr> = Vec::new();
+                    for elem in &list[1..] {
+                        arguments.push(elem.as_ref().clone());
+                    }
 
-            // We can now call the function.
-            return Ok(Function::try_from(first_elem)?.call(arguments, stg)?);
+                    function.call(arguments, stg)
+                }
+                // What was passed was not defined, so return an error.
+                Err(e) => Err(e),
+            }
         }
         Expr::QuotedList(list) => {
             let reg_list = Expr::List(

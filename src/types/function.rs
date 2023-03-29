@@ -1,27 +1,32 @@
 use crate::errors::EvaluatorError;
 
 use super::{
-    builtin::BuiltinFunction, scope::LexicalVarStorage, userfunctions::UserDefinedFunction, Expr,
-    Value,
+    builtin::{BuiltinFunction, BuiltinMacro},
+    scope::LexicalVarStorage,
+    userfunctions::UserDefinedFunction,
+    Expr, Value,
 };
 
 pub enum Function {
-    Builtin(BuiltinFunction),
     UserDefined(UserDefinedFunction),
-    Macro,
+    Builtin(BuiltinFunction),
+    Macro(BuiltinMacro),
 }
 
 impl TryFrom<Expr> for Function {
     type Error = EvaluatorError;
-    fn try_from(expr: Expr) -> Result<Self, Self::Error> {
+    fn try_from(expr: Expr) -> Result<Function, EvaluatorError> {
         match expr {
             Expr::Value(v) => match v {
                 Value::Symbol(s) => match BuiltinFunction::try_from(s.as_str()) {
                     Ok(builtin) => Ok(Function::Builtin(builtin)),
-                    Err(_) => Err(EvaluatorError::UndefinedSymbol(format!(
-                        "{} is not a defined function.",
-                        s
-                    ))),
+                    Err(_) => match BuiltinMacro::try_from(s.as_str()) {
+                        Ok(builtin) => Ok(Function::Macro(builtin)),
+                        Err(_) => Err(EvaluatorError::UndefinedSymbol(format!(
+                            "{} is not a defined function.",
+                            s
+                        ))),
+                    },
                 },
                 _ => Err(EvaluatorError::UncallableType(format!(
                     "{} is not a callable type.",
@@ -45,7 +50,7 @@ impl CallFunction for Function {
         match &self {
             Function::Builtin(builtin) => builtin.call(args, stg),
             Function::UserDefined(userdefined) => userdefined.call(args, stg),
-            Function::Macro => unimplemented!(),
+            Function::Macro(builtin_macro) => builtin_macro.call(args, stg),
         }
     }
 }

@@ -12,7 +12,7 @@ pub struct UserDefinedFunction {
 }
 
 impl CallFunction for UserDefinedFunction {
-    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+    fn call(&self, _args: Vec<Expr>, _stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
         todo!()
     }
 }

@@ -7,6 +7,71 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub slyther);
 
 #[cfg(test)]
+mod test_value_types {
+    use super::types::Expr;
+    use super::types::Value;
+    use std::sync::Arc;
+
+    #[test]
+    fn test_value_display() {
+        assert_eq!(format!("{}", Value::Int(1)), "1");
+        assert_eq!(format!("{}", Value::Symbol("a".to_string())), "a");
+        assert_eq!(format!("{}", Value::NIL), "'()");
+        assert_eq!(format!("{}", Value::Quoted(Arc::new(Value::Int(1)))), "'1");
+    }
+
+    #[test]
+    fn test_expr_display() {
+        assert_eq!(format!("{}", Expr::Value(Value::Int(1))), "1");
+        assert_eq!(
+            format!("{}", Expr::Value(Value::Symbol("a".to_string()))),
+            "a"
+        );
+        assert_eq!(format!("{}", Expr::Value(Value::NIL)), "'()");
+        assert_eq!(
+            format!("{}", Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
+            "'1"
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Int(1))),
+                    Arc::new(Expr::Value(Value::Int(2))),
+                ])
+            ),
+            "(1 2)"
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_var_storage {
+    use super::types::scope::LexicalVarStorage;
+    use super::types::Value;
+    use crate::types::Expr;
+
+    #[test]
+    fn test_set_get() {
+        let mut storage = LexicalVarStorage::new();
+        storage.put("a", Expr::Value(Value::Int(1)));
+        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
+    }
+
+    #[test]
+    fn test_fork() {
+        let mut storage = LexicalVarStorage::new();
+        storage.put("a", Expr::Value(Value::Int(1)));
+        let mut fork = storage.fork();
+        fork.put("b", Expr::Value(Value::Int(2)));
+        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
+        assert_eq!(storage.get("b"), None);
+        assert_eq!(fork.get("a"), Some(&Expr::Value(Value::Int(1))));
+        assert_eq!(fork.get("b"), Some(&Expr::Value(Value::Int(2))));
+    }
+}
+
+#[cfg(test)]
 mod test_parsing {
     use super::slyther::ExprsParser;
     use super::types::{Expr, Value};
@@ -240,7 +305,7 @@ mod test_evaluator_quotes {
 }
 
 #[cfg(test)]
-mod test_evaluator_builtins {
+mod test_builtin_functions {
     use crate::{
         evaluator::lisp_eval,
         slyther::ExprsParser,
@@ -395,78 +460,15 @@ mod test_evaluator_builtins {
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(true)));
     }
-
-    #[test]
-    fn test_define_function() {
-        let input = "((twirl alpha beta) (print alpha) (print beta))";
-    }
 }
 
 #[cfg(test)]
-mod test_value_types {
-    use super::types::Expr;
-    use super::types::Value;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_value_display() {
-        assert_eq!(format!("{}", Value::Int(1)), "1");
-        assert_eq!(format!("{}", Value::Symbol("a".to_string())), "a");
-        assert_eq!(format!("{}", Value::NIL), "'()");
-        assert_eq!(format!("{}", Value::Quoted(Arc::new(Value::Int(1)))), "'1");
-    }
-
-    #[test]
-    fn test_expr_display() {
-        assert_eq!(format!("{}", Expr::Value(Value::Int(1))), "1");
-        assert_eq!(
-            format!("{}", Expr::Value(Value::Symbol("a".to_string()))),
-            "a"
-        );
-        assert_eq!(format!("{}", Expr::Value(Value::NIL)), "'()");
-        assert_eq!(
-            format!("{}", Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
-            "'1"
-        );
-        assert_eq!(
-            format!(
-                "{}",
-                Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Int(1))),
-                    Arc::new(Expr::Value(Value::Int(2))),
-                ])
-            ),
-            "(1 2)"
-        );
-    }
-}
-
-#[cfg(test)]
-mod test_var_storage {
-    use super::types::scope::LexicalVarStorage;
-    use super::types::Value;
-    use crate::evaluator::lisp_eval;
-    use crate::slyther::ExprsParser;
-    use crate::types::Expr;
-
-    #[test]
-    fn test_set_get() {
-        let mut storage = LexicalVarStorage::new();
-        storage.put("a", Expr::Value(Value::Int(1)));
-        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
-    }
-
-    #[test]
-    fn test_fork() {
-        let mut storage = LexicalVarStorage::new();
-        storage.put("a", Expr::Value(Value::Int(1)));
-        let mut fork = storage.fork();
-        fork.put("b", Expr::Value(Value::Int(2)));
-        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
-        assert_eq!(storage.get("b"), None);
-        assert_eq!(fork.get("a"), Some(&Expr::Value(Value::Int(1))));
-        assert_eq!(fork.get("b"), Some(&Expr::Value(Value::Int(2))));
-    }
+mod test_builtin_macro {
+    use crate::{
+        evaluator::lisp_eval,
+        slyther::ExprsParser,
+        types::{scope::LexicalVarStorage, Expr, Value},
+    };
 
     #[test]
     fn test_define_var() {

@@ -9,7 +9,7 @@ use log::debug;
 use std::collections::{HashMap, HashSet};
 
 lazy_static! {
-    pub static ref BUILTINS_MAP: HashMap<&'static str, BuiltinFunction> = {
+    pub static ref BUILTINS_FUNC_MAP: HashMap<&'static str, BuiltinFunction> = {
         let mut m = HashMap::new();
         m.insert("+", BuiltinFunction::Add);
         m.insert("-", BuiltinFunction::Sub);
@@ -24,8 +24,6 @@ lazy_static! {
         m.insert(">", BuiltinFunction::Gt);
         m.insert("<=", BuiltinFunction::Lte);
         m.insert(">=", BuiltinFunction::Gte);
-        m.insert("and", BuiltinFunction::And);
-        m.insert("or", BuiltinFunction::Or);
         m.insert("not", BuiltinFunction::Not);
         m.insert("print", BuiltinFunction::Print);
         m.insert("println", BuiltinFunction::Println);
@@ -47,24 +45,35 @@ lazy_static! {
         m.insert("is-nil", BuiltinFunction::IsNil);
         m.insert("is-defined", BuiltinFunction::IsDefined);
         m.insert("is-bound", BuiltinFunction::IsBound);
-        m.insert("define", BuiltinFunction::Define);
-        m.insert("set", BuiltinFunction::Set);
-        m.insert("let", BuiltinFunction::Let);
-        m.insert("if", BuiltinFunction::If);
         m.insert("quote", BuiltinFunction::Quote);
         m.insert("quasiquote", BuiltinFunction::Quasiquote);
         m.insert("unquote", BuiltinFunction::Unquote);
         m.insert("unquote-splicing", BuiltinFunction::UnquoteSplicing);
-        m.insert("lambda", BuiltinFunction::Lambda);
-        m.insert("macro", BuiltinFunction::Macro);
-        m.insert("eval", BuiltinFunction::Eval);
         m.insert("apply", BuiltinFunction::Apply);
         m.insert("load", BuiltinFunction::Load);
         m.insert("exit", BuiltinFunction::Exit);
         m.insert("help", BuiltinFunction::Help);
         m
     };
-    pub static ref BUILTINS_SET: HashSet<&'static str> = BUILTINS_MAP.keys().cloned().collect();
+    pub static ref BUILTINS_FUNC_SET: HashSet<&'static str> =
+        BUILTINS_MACRO_MAP.keys().cloned().collect();
+    pub static ref BUILTINS_MACRO_MAP: HashMap<&'static str, BuiltinMacro> = {
+        let mut m = HashMap::new();
+        m.insert("match", BuiltinMacro::Match);
+        m.insert("define", BuiltinMacro::Define);
+        m.insert("set", BuiltinMacro::Set);
+        m.insert("let", BuiltinMacro::Let);
+        m.insert("if", BuiltinMacro::If);
+        m.insert("lambda", BuiltinMacro::Lambda);
+        m.insert("cond", BuiltinMacro::Cond);
+        m.insert("and", BuiltinMacro::And);
+        m.insert("or", BuiltinMacro::Or);
+        m.insert("eval", BuiltinMacro::Eval);
+        m.insert("parse", BuiltinMacro::Parse);
+        m
+    };
+    pub static ref BUILTINS_MACRO_SET: HashSet<&'static str> =
+        BUILTINS_MACRO_MAP.keys().cloned().collect();
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -82,8 +91,6 @@ pub enum BuiltinFunction {
     Gt,
     Lte,
     Gte,
-    And,
-    Or,
     Not,
     Print,
     Println,
@@ -105,17 +112,10 @@ pub enum BuiltinFunction {
     IsNil,
     IsDefined,
     IsBound,
-    Define,
-    Set,
-    Let,
-    If,
     Quote,
     Quasiquote,
     Unquote,
     UnquoteSplicing,
-    Lambda,
-    Macro,
-    Eval,
     Apply,
     Load,
     Exit,
@@ -123,18 +123,31 @@ pub enum BuiltinFunction {
 }
 
 impl TryFrom<&str> for BuiltinFunction {
-    type Error = String;
+    type Error = EvaluatorError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match BUILTINS_MAP.get(value) {
+        match BUILTINS_FUNC_MAP.get(value) {
             Some(builtin) => Ok(*builtin),
-            None => Err(format!("{} is not a builtin function", value)),
+            None => Err(EvaluatorError::UndefinedSymbol(format!(
+                "{} is not a builtin function",
+                value
+            ))),
         }
     }
 }
 
 impl CallFunction for BuiltinFunction {
-    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+    fn call(
+        &self,
+        raw_args: Vec<Expr>,
+        stg: &mut LexicalVarStorage,
+    ) -> Result<Expr, EvaluatorError> {
+        // This is a function so everything in the args should be known and evaluated.
+        let mut args = Vec::new();
+        for arg in &raw_args {
+            args.push(lisp_eval(&arg, stg)?);
+        }
+
         match self {
             BuiltinFunction::Add => {
                 let mut sum = 0.0;
@@ -392,7 +405,44 @@ impl CallFunction for BuiltinFunction {
                 }
                 Ok(Expr::Value(Value::NIL))
             }
-            BuiltinFunction::Define => {
+            _ => todo!(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum BuiltinMacro {
+    Match,
+    Define,
+    Lambda,
+    Let,
+    If,
+    Cond,
+    And,
+    Or,
+    Set,
+    Eval,
+    Parse,
+}
+
+impl TryFrom<&str> for BuiltinMacro {
+    type Error = EvaluatorError;
+
+    fn try_from(value: &str) -> Result<BuiltinMacro, EvaluatorError> {
+        match BUILTINS_MACRO_MAP.get(value) {
+            Some(builtin) => Ok(*builtin),
+            None => Err(EvaluatorError::UndefinedSymbol(format!(
+                "{} is not a builtin macro",
+                value
+            ))),
+        }
+    }
+}
+
+impl CallFunction for BuiltinMacro {
+    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+        match self {
+            BuiltinMacro::Define => {
                 debug!("Defining function: {:?}", args);
                 match &args[0] {
                     Expr::Value(Value::Symbol(s)) => {
@@ -400,7 +450,7 @@ impl CallFunction for BuiltinFunction {
                         debug!("Setting variable {} to {:?}", s, args[1]);
                         stg.put(s.as_str(), args[1].clone());
                     }
-                    Expr::List(list) => {
+                    Expr::List(_list) => {
                         // set the function
                         todo!();
                     }
