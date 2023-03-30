@@ -8,7 +8,6 @@ use super::{Expr, Value};
 use lazy_static::lazy_static;
 use log;
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 lazy_static! {
     pub static ref BUILTINS_FUNC_MAP: HashMap<&'static str, BuiltinFunction> = {
@@ -374,6 +373,126 @@ impl CallFunction for BuiltinFunction {
                     }
                 }
                 Ok(Expr::Value(Value::Boolean(false)))
+            }
+            BuiltinFunction::Lt => {
+                let mut prev = args.get(0).unwrap();
+                for arg in args.iter().skip(1) {
+                    match (prev, arg) {
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Int(i2))) => {
+                            if i1 >= i2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Float(f2))) => {
+                            if *i1 as f64 >= *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Int(i2))) => {
+                            if *f1 >= *i2 as f64 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Float(f2))) => {
+                            if *f1 >= *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        _ => todo!(),
+                    };
+                    prev = arg;
+                }
+                Ok(Expr::Value(Value::Boolean(true)))
+            }
+            BuiltinFunction::Gt => {
+                let mut prev = args.get(0).unwrap();
+                for arg in args.iter().skip(1) {
+                    match (prev, arg) {
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Int(i2))) => {
+                            if i1 <= i2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Float(f2))) => {
+                            if *i1 as f64 <= *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Int(i2))) => {
+                            if *f1 <= *i2 as f64 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Float(f2))) => {
+                            if *f1 <= *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        _ => todo!(),
+                    };
+                    prev = arg;
+                }
+                Ok(Expr::Value(Value::Boolean(true)))
+            }
+            BuiltinFunction::Lte => {
+                let mut prev = args.get(0).unwrap();
+                for arg in args.iter().skip(1) {
+                    match (prev, arg) {
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Int(i2))) => {
+                            if i1 > i2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Float(f2))) => {
+                            if *i1 as f64 > *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Int(i2))) => {
+                            if *f1 > *i2 as f64 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Float(f2))) => {
+                            if *f1 > *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        _ => todo!(),
+                    };
+                    prev = arg;
+                }
+                Ok(Expr::Value(Value::Boolean(true)))
+            }
+            BuiltinFunction::Gte => {
+                let mut prev = args.get(0).unwrap();
+                for arg in args.iter().skip(1) {
+                    match (prev, arg) {
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Int(i2))) => {
+                            if i1 < i2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Int(i1)), Expr::Value(Value::Float(f2))) => {
+                            if (*i1 as f64) < *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Int(i2))) => {
+                            if *f1 < *i2 as f64 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        (Expr::Value(Value::Float(f1)), Expr::Value(Value::Float(f2))) => {
+                            if *f1 < *f2 {
+                                return Ok(Expr::Value(Value::Boolean(false)));
+                            }
+                        }
+                        _ => todo!(),
+                    };
+                    prev = arg;
+                }
+                Ok(Expr::Value(Value::Boolean(true)))
             }
             BuiltinFunction::Print => {
                 for arg in args {

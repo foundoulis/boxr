@@ -460,6 +460,106 @@ mod test_builtin_functions {
         let result = result.unwrap();
         assert_eq!(result, Expr::Value(Value::Boolean(true)));
     }
+
+    #[test]
+    fn test_lt() {
+        let input = "(< 1 2 3 4 5)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+
+        let input = "(< 1 2 3 4 4)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(false)));
+    }
+
+    #[test]
+    fn test_gt() {
+        let input = "(> 5 4 3 2 1)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+
+        let input = "(> 5 4 3 2 2)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(false)));
+    }
+
+    #[test]
+    fn test_lte() {
+        let input = "(<= 1 2 3 4 5)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+
+        let input = "(<= 1 2 3 4 4)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+    }
+
+    #[test]
+    fn test_gte() {
+        let input = "(>= 5 4 3 2 1)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+
+        let input = "(>= 5 4 3 2 2)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+        let expr = &parsed_input[0];
+        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+    }
 }
 
 #[cfg(test)]
