@@ -16,6 +16,28 @@ pub enum Expr {
     QuotedList(Vec<Arc<Expr>>),
 }
 
+impl FromIterator<Arc<Expr>> for Expr {
+    fn from_iter<T: IntoIterator<Item = Arc<Expr>>>(iter: T) -> Self {
+        Expr::List(iter.into_iter().collect())
+    }
+}
+
+impl IntoIterator for Expr {
+    type Item = Expr;
+    type IntoIter = std::vec::IntoIter<Expr>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            Expr::List(l) => l
+                .into_iter()
+                .map(|e| Expr::clone(&e))
+                .collect::<Vec<Expr>>()
+                .into_iter(),
+            _ => panic!("Cannot convert non-list expression into iterator."),
+        }
+    }
+}
+
 impl Display for Expr {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {

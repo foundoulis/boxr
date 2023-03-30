@@ -464,10 +464,13 @@ mod test_builtin_functions {
 
 #[cfg(test)]
 mod test_builtin_macro {
+    use std::sync::Arc;
+
     use crate::{
+        errors::EvaluatorError,
         evaluator::lisp_eval,
         slyther::ExprsParser,
-        types::{scope::LexicalVarStorage, Expr, Value},
+        types::{scope::LexicalVarStorage, userfunctions::UserDefinedFunction, Expr, Value},
     };
 
     #[test]
@@ -552,5 +555,37 @@ mod test_builtin_macro {
         assert_eq!(results[0], Expr::Value(Value::NIL));
         assert_eq!(results[1], Expr::Value(Value::NIL));
         assert_eq!(results[2], Expr::Value(Value::Float(11.0)));
+    }
+
+    #[test]
+    fn test_define_func() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define (func-name x y z) (body))";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Result<Vec<Expr>, EvaluatorError>>();
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], Expr::Value(Value::NIL));
+        assert_eq!(
+            storage.get_func("func-name"),
+            Some(&UserDefinedFunction::new(
+                vec![
+                    Expr::Value(Value::Symbol("x".to_string())),
+                    Expr::Value(Value::Symbol("y".to_string())),
+                    Expr::Value(Value::Symbol("z".to_string()))
+                ],
+                vec![Expr::List(vec![Arc::new(Expr::Value(Value::Symbol(
+                    "body".to_string()
+                )))])]
+            ))
+        );
     }
 }

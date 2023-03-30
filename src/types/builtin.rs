@@ -1,5 +1,6 @@
 use crate::errors::EvaluatorError;
 use crate::evaluator::lisp_eval;
+use crate::types::userfunctions::UserDefinedFunction;
 
 use super::function::CallFunction;
 use super::scope::LexicalVarStorage;
@@ -7,6 +8,7 @@ use super::{Expr, Value};
 use lazy_static::lazy_static;
 use log;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 lazy_static! {
     pub static ref BUILTINS_FUNC_MAP: HashMap<&'static str, BuiltinFunction> = {
@@ -452,9 +454,51 @@ impl CallFunction for BuiltinMacro {
                         log::debug!("Setting variable {} to {:?}", s, second);
                         stg.put(s.as_str(), second);
                     }
-                    Expr::List(_list) => {
-                        // set the function
-                        todo!();
+                    Expr::List(list) => {
+                        log::debug!("Defining with args: {:?}", list);
+                        let list_raw = list
+                            .iter()
+                            .map(|elem| Expr::clone(elem))
+                            .collect::<Vec<_>>();
+
+                        let (name_raw, args_raw): (&Expr, &[Expr]) =
+                            list_raw.split_first().unwrap();
+
+                        let name = match name_raw {
+                            Expr::Value(Value::Symbol(s)) => s.clone(),
+                            _ => {
+                                return Err(EvaluatorError::BadFunctionDefinition(
+                                    "First arg cannot be a quoted list.".to_string(),
+                                ))
+                            }
+                        };
+
+                        let local_args = args_raw
+                            .iter()
+                            .map(|arg| match arg {
+                                Expr::Value(Value::Symbol(s)) => {
+                                    Ok(Expr::Value(Value::Symbol(s.clone())))
+                                }
+                                _ => {
+                                    return Err(EvaluatorError::BadFunctionDefinition(
+                                        "Args must be symbols.".to_string(),
+                                    ))
+                                }
+                            })
+                            .collect::<Result<Vec<_>, EvaluatorError>>()?;
+
+                        let body = &args[1..]
+                            .into_iter()
+                            .map(|e| Expr::clone(e))
+                            .collect::<Vec<_>>();
+
+                        log::debug!(
+                            "Defining function {} with args {:?} and body {:?}",
+                            name,
+                            local_args,
+                            body
+                        );
+                        stg.put_func(&name, UserDefinedFunction::new(local_args, body.to_vec()));
                     }
                     _ => {
                         return Err(EvaluatorError::BadFunctionDefinition(
