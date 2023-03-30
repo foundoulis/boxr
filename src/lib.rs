@@ -588,4 +588,107 @@ mod test_builtin_macro {
             ))
         );
     }
+
+    #[test]
+    fn test_define_func_and_call() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define (func-name x y z) (+ x y z))";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Result<Vec<Expr>, EvaluatorError>>();
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], Expr::Value(Value::NIL));
+        assert_eq!(
+            storage.get_func("func-name"),
+            Some(&UserDefinedFunction::new(
+                vec![
+                    Expr::Value(Value::Symbol("x".to_string())),
+                    Expr::Value(Value::Symbol("y".to_string())),
+                    Expr::Value(Value::Symbol("z".to_string()))
+                ],
+                vec![Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
+                ])]
+            ))
+        );
+
+        let input = "(func-name 1 2 3)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 1);
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Result<Vec<Expr>, EvaluatorError>>();
+        println!("{:?}", results);
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0], Expr::Value(Value::Float(6.0)));
+    }
+
+    #[test]
+    fn test_define_func_and_call_and_return() {
+        let mut storage = LexicalVarStorage::new();
+        let input = "(define (func-name x y z) (print x) (+ x y z)) (func-name 1 2 3)";
+        let parsed_input = ExprsParser::new().parse(input);
+        assert!(parsed_input.is_ok());
+        let parsed_input = parsed_input.unwrap();
+        assert_eq!(parsed_input.len(), 2);
+        assert_eq!(
+            parsed_input[0],
+            Arc::new(Expr::List(vec![
+                Arc::new(Expr::Value(Value::Symbol("define".to_string()))),
+                Arc::new(Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Symbol("func-name".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
+                ])),
+                Arc::new(Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Symbol("print".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("x".to_string())))
+                ])),
+                Arc::new(Expr::List(vec![
+                    Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
+                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
+                ]))
+            ]))
+        );
+        assert_eq!(
+            parsed_input[1],
+            Arc::new(Expr::List(vec![
+                Arc::new(Expr::Value(Value::Symbol("func-name".to_string()))),
+                Arc::new(Expr::Value(Value::Int(1))),
+                Arc::new(Expr::Value(Value::Int(2))),
+                Arc::new(Expr::Value(Value::Int(3)))
+            ]))
+        );
+
+        let results = parsed_input
+            .iter()
+            .map(|expr| lisp_eval(expr, &mut storage))
+            .collect::<Result<Vec<Expr>, EvaluatorError>>();
+        println!("{:?}", results);
+        assert!(results.is_ok());
+        let results = results.unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0], Expr::Value(Value::NIL));
+        assert_eq!(results[1], Expr::Value(Value::Float(6.0)));
+    }
 }

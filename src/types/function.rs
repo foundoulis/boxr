@@ -13,19 +13,24 @@ pub enum Function {
     Macro(BuiltinMacro),
 }
 
-impl TryFrom<Expr> for Function {
-    type Error = EvaluatorError;
-    fn try_from(expr: Expr) -> Result<Function, EvaluatorError> {
+impl Function {
+    pub fn get_function(
+        expr: Expr,
+        stg: &mut LexicalVarStorage,
+    ) -> Result<Function, EvaluatorError> {
         match expr {
             Expr::Value(v) => match v {
                 Value::Symbol(s) => match BuiltinFunction::try_from(s.as_str()) {
                     Ok(builtin) => Ok(Function::Builtin(builtin)),
                     Err(_) => match BuiltinMacro::try_from(s.as_str()) {
                         Ok(builtin) => Ok(Function::Macro(builtin)),
-                        Err(_) => Err(EvaluatorError::UndefinedSymbol(format!(
-                            "{} is not a defined function.",
-                            s
-                        ))),
+                        Err(_) => match UserDefinedFunction::get_func(s.as_str(), stg) {
+                            Ok(user_defined) => Ok(Function::UserDefined(user_defined)),
+                            Err(_) => Err(EvaluatorError::UndefinedSymbol(format!(
+                                "{} is not a defined function.",
+                                s
+                            ))),
+                        },
                     },
                 },
                 _ => Err(EvaluatorError::UncallableType(format!(

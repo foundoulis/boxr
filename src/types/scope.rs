@@ -40,12 +40,12 @@ impl LexicalVarStorage {
     }
 
     pub fn fork(&self) -> LexicalVarStorage {
-        let mut result = HashMap::new();
+        let mut environ_merge = HashMap::new();
         for (k, v) in &self.environ {
-            result.insert(k.clone(), v.clone());
+            environ_merge.insert(k.clone(), v.clone());
         }
         for (k, v) in &self.local {
-            result.insert(k.clone(), v.clone());
+            environ_merge.insert(k.clone(), v.clone());
         }
 
         let mut function_merge = HashMap::new();
@@ -57,7 +57,7 @@ impl LexicalVarStorage {
         }
 
         LexicalVarStorage {
-            environ: result,
+            environ: environ_merge,
             local: HashMap::new(),
             functions_env: function_merge,
             functions_local: HashMap::new(),

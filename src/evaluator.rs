@@ -39,7 +39,7 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
             }
 
             // look up what we are doing based on the first element.
-            match Function::try_from(first_elem) {
+            match Function::get_function(first_elem, stg) {
                 // If it was found to be a function, call it.
                 Ok(function) => {
                     // Unwrap all the arguments into Exprs.

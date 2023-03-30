@@ -13,4 +13,5 @@ pub enum EvaluatorError {
     UndefinedSymbol(String),
     UncallableType(String),
     BadFunctionDefinition(String),
+    InvalidArgument(String),
 }
