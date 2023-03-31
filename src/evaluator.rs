@@ -1,7 +1,7 @@
 use crate::{
     errors::EvaluatorError,
     types::{
-        function::{CallFunction, Function},
+        function::{CallableFunction, Function},
         scope::LexicalVarStorage,
     },
     types::{Expr, Value},
@@ -32,14 +32,14 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
             // If the first element is not a symbol, return an error.
             if let Expr::Value(Value::Symbol(ref name)) = first_elem {
                 // Look for builtin functions
-                if let Ok(function) = Function::get_function(first_elem.clone(), stg) {
+                if let Ok(function) = Function::get(name, stg) {
                     // Unwrap all the arguments into Exprs.
                     let mut arguments: Vec<Expr> = Vec::new();
                     for elem in &list[1..] {
                         arguments.push(elem.as_ref().clone());
                     }
 
-                    function.call(arguments, stg)
+                    function.call(name.as_str(), arguments, stg)
 
                 // Look for user defined functions
                 } else if let Some(function) = stg.get_func(&name) {
@@ -49,7 +49,7 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
                         arguments.push(elem.as_ref().clone());
                     }
 
-                    function.call(arguments, &mut stg.fork())
+                    function.call(name.as_str(), arguments, &mut stg.fork())
                 } else {
                     return Err(EvaluatorError::UndefinedSymbol(name.clone()));
                 }

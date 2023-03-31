@@ -1,6 +1,10 @@
 use crate::{errors::EvaluatorError, evaluator::lisp_eval, types::Value};
 
-use super::{function::CallFunction, scope::LexicalVarStorage, Expr};
+use super::{
+    function::{CallableFunction, Function},
+    scope::LexicalVarStorage,
+    Expr,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserDefinedFunction {
@@ -8,8 +12,23 @@ pub struct UserDefinedFunction {
     body: Vec<Expr>,
 }
 
-impl CallFunction for UserDefinedFunction {
-    fn call(&self, args: Vec<Expr>, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+impl CallableFunction for UserDefinedFunction {
+    fn get(sym: &str, stg: &mut LexicalVarStorage) -> Result<Function, EvaluatorError> {
+        if let Some(func) = stg.get_func(sym) {
+            Ok(Function::UserDefined(func.clone()))
+        } else {
+            Err(EvaluatorError::UndefinedSymbol(format!(
+                "{} is not a defined function.",
+                sym
+            )))
+        }
+    }
+    fn call(
+        &self,
+        _name: &str,
+        args: Vec<Expr>,
+        stg: &mut LexicalVarStorage,
+    ) -> Result<Expr, EvaluatorError> {
         let parsed_args = args
             .iter()
             .map(|arg| lisp_eval(arg, stg))
