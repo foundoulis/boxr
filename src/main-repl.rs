@@ -11,17 +11,19 @@ fn main() {
     let mut global_stg = LexicalVarStorage::new();
     loop {
         match reader.read_line().unwrap() {
-            linefeed::ReadResult::Input(line) => {
-                let exprs = parser.parse(&line).unwrap();
-                for expr in exprs {
-                    let result = Some(lisp_eval(&expr, &mut global_stg));
-                    match result {
-                        Some(Ok(v)) => println!("{}", v),
-                        Some(Err(e)) => log::error!("{:?}", e),
-                        None => {}
+            linefeed::ReadResult::Input(line) => match parser.parse(&line) {
+                Ok(exprs) => {
+                    for expr in exprs {
+                        let result = Some(lisp_eval(&expr, &mut global_stg));
+                        match result {
+                            Some(Ok(v)) => println!("{}", v),
+                            Some(Err(e)) => log::error!("{:?}", e),
+                            None => {}
+                        }
                     }
                 }
-            }
+                Err(e) => log::error!("{:?}", e),
+            },
             linefeed::ReadResult::Eof => break,
             linefeed::ReadResult::Signal(_) => break,
         }
