@@ -30,18 +30,9 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
             let first_elem: Expr = Expr::clone(list[0].as_ref());
 
             // If the first element is not a symbol, return an error.
-            if let Expr::Value(Value::Symbol(_)) = first_elem {
-            } else {
-                return Err(EvaluatorError::NotAFunction(format!(
-                    "Type: {} is not callable.",
-                    Expr::from(first_elem),
-                )));
-            }
-
-            // look up what we are doing based on the first element.
-            match Function::get_function(first_elem, stg) {
-                // If it was found to be a function, call it.
-                Ok(function) => {
+            if let Expr::Value(Value::Symbol(ref name)) = first_elem {
+                // Look for builtin functions
+                if let Ok(function) = Function::get_function(first_elem.clone(), stg) {
                     // Unwrap all the arguments into Exprs.
                     let mut arguments: Vec<Expr> = Vec::new();
                     for elem in &list[1..] {
@@ -49,9 +40,24 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
                     }
 
                     function.call(arguments, stg)
+
+                // Look for user defined functions
+                } else if let Some(function) = stg.get_func(&name) {
+                    // Unwrap all the arguments into Exprs.
+                    let mut arguments: Vec<Expr> = Vec::new();
+                    for elem in &list[1..] {
+                        arguments.push(elem.as_ref().clone());
+                    }
+
+                    function.call(arguments, &mut stg.fork())
+                } else {
+                    return Err(EvaluatorError::UndefinedSymbol(name.clone()));
                 }
-                // What was passed was not defined, so return an error.
-                Err(e) => Err(e),
+            } else {
+                return Err(EvaluatorError::NotAFunction(format!(
+                    "Type: {} is not callable.",
+                    Expr::from(first_elem),
+                )));
             }
         }
         Expr::QuotedList(list) => {

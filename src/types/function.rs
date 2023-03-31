@@ -18,30 +18,24 @@ impl Function {
         expr: Expr,
         stg: &mut LexicalVarStorage,
     ) -> Result<Function, EvaluatorError> {
-        match expr {
-            Expr::Value(v) => match v {
-                Value::Symbol(s) => match BuiltinFunction::try_from(s.as_str()) {
-                    Ok(builtin) => Ok(Function::Builtin(builtin)),
-                    Err(_) => match BuiltinMacro::try_from(s.as_str()) {
-                        Ok(builtin) => Ok(Function::Macro(builtin)),
-                        Err(_) => match UserDefinedFunction::get_func(s.as_str(), stg) {
-                            Ok(user_defined) => Ok(Function::UserDefined(user_defined)),
-                            Err(_) => Err(EvaluatorError::UndefinedSymbol(format!(
-                                "{} is not a defined function.",
-                                s
-                            ))),
-                        },
-                    },
-                },
-                _ => Err(EvaluatorError::UncallableType(format!(
-                    "{} is not a callable type.",
-                    v
-                ))),
-            },
-            _ => Err(EvaluatorError::UncallableType(format!(
+        if let Expr::Value(Value::Symbol(sym)) = expr {
+            if let Ok(builtin) = BuiltinFunction::try_from(sym.as_str()) {
+                Ok(Function::Builtin(builtin))
+            } else if let Ok(builtin_macro) = BuiltinMacro::try_from(sym.as_str()) {
+                Ok(Function::Macro(builtin_macro))
+            } else if let Ok(user_defined) = UserDefinedFunction::get_func(sym.as_str(), stg) {
+                Ok(Function::UserDefined(user_defined))
+            } else {
+                Err(EvaluatorError::UndefinedSymbol(format!(
+                    "{} is not a defined function.",
+                    sym
+                )))
+            }
+        } else {
+            Err(EvaluatorError::UncallableType(format!(
                 "{} is not a callable type.",
                 expr
-            ))),
+            )))
         }
     }
 }
