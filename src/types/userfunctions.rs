@@ -71,3 +71,10 @@ impl UserDefinedFunction {
         }
     }
 }
+
+#[mutants::skip]
+impl std::fmt::Display for UserDefinedFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(lambda ({:?}) ({:?}))", self.args, self.body)
+    }
+}

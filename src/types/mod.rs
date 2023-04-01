@@ -9,11 +9,14 @@ use std::{
     sync::Arc,
 };
 
+use self::userfunctions::UserDefinedFunction;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Value(Value),
     List(Vec<Arc<Expr>>),
     QuotedList(Vec<Arc<Expr>>),
+    Function(UserDefinedFunction),
 }
 
 impl FromIterator<Arc<Expr>> for Expr {
@@ -62,6 +65,7 @@ impl Display for Expr {
                 }
                 write!(f, ")")
             }
+            Expr::Function(func) => write!(f, "{:?}", func),
         }
     }
 }

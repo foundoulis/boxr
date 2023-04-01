@@ -20,10 +20,15 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
             Value::Float(fl) => return Ok(Expr::Value(Value::Float(*fl))),
             Value::Quoted(q) => return Ok(Expr::Value(Value::clone(&q))),
             Value::Comment(_s) => return Ok(Expr::Value(Value::NIL)),
-            Value::Symbol(s) => match stg.get(&s) {
-                Some(v) => return Ok(Expr::clone(v)),
-                None => return Err(EvaluatorError::UndefinedSymbol(s.clone())),
-            },
+            Value::Symbol(s) => {
+                if let Some(s) = stg.get(&s) {
+                    return Ok(Expr::clone(s));
+                } else if let Some(func) = stg.get_func(&s) {
+                    return Ok(Expr::Function(func.clone()));
+                } else {
+                    return Err(EvaluatorError::UndefinedSymbol(s.clone()));
+                }
+            }
         },
         Expr::List(list) => {
             // Grab the name of the function of the list.
@@ -50,8 +55,21 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
                     }
 
                     function.call(name.as_str(), arguments, &mut stg.fork())
+                } else if let Some(anon_func) = stg.get(&name) {
+                    match anon_func {
+                        Expr::Function(func) => {
+                            // Unwrap all the arguments into Exprs.
+                            let mut arguments: Vec<Expr> = Vec::new();
+                            for elem in &list[1..] {
+                                arguments.push(elem.as_ref().clone());
+                            }
+
+                            func.call(name.as_str(), arguments, &mut stg.fork())
+                        }
+                        _ => Err(EvaluatorError::UndefinedSymbol(name.clone())),
+                    }
                 } else {
-                    return Err(EvaluatorError::UndefinedSymbol(name.clone()));
+                    Err(EvaluatorError::UndefinedSymbol(name.clone()))
                 }
             } else {
                 return Err(EvaluatorError::NotAFunction(format!(
@@ -67,10 +85,12 @@ pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, Evalu
                         Expr::Value(v) => Arc::new(Expr::Value(Value::Quoted(Arc::new(v.clone())))),
                         Expr::List(l) => Arc::new(Expr::QuotedList(l.clone())),
                         Expr::QuotedList(l) => Arc::new(Expr::QuotedList(l.clone())),
+                        Expr::Function(func) => Arc::new(Expr::Function(func.clone())),
                     })
                     .collect(),
             );
-            return Ok(reg_list);
+            Ok(reg_list)
         }
+        Expr::Function(func) => Ok(func.call("", vec![expr.clone()], &mut stg.fork())?),
     }
 }

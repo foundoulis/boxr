@@ -56,7 +56,7 @@ impl CallableFunction for BuiltinMacro {
     }
     fn call(
         &self,
-        _name: &str,
+        name: &str,
         args: Vec<Expr>,
         stg: &mut LexicalVarStorage,
     ) -> Result<Expr, EvaluatorError> {
@@ -122,9 +122,46 @@ impl CallableFunction for BuiltinMacro {
                             "First arg cannot be a quoted list.".to_string(),
                         ))
                     }
+                }
+                Ok(Expr::Value(Value::NIL))
+            }
+            BuiltinMacro::Lambda => {
+                log::debug!("Defining lambda: {:?} args: {:?}", name, args);
+                // Build the lambda funciton.
+                let list_raw = args
+                    .iter()
+                    .map(|elem| Expr::clone(elem))
+                    .collect::<Vec<_>>();
+
+                let (args_raw, body_raw): (&Expr, &[Expr]) = list_raw.split_first().unwrap();
+
+                let args: Vec<Expr> = match Expr::clone(args_raw) {
+                    Expr::List(list) => list
+                        .iter()
+                        .map(|arg| match Expr::clone(arg) {
+                            Expr::Value(Value::Symbol(s)) => {
+                                Ok(Expr::Value(Value::Symbol(s.clone())))
+                            }
+                            _ => {
+                                return Err(EvaluatorError::BadFunctionDefinition(
+                                    "Args must be symbols.".to_string(),
+                                ))
+                            }
+                        })
+                        .collect::<Result<Vec<_>, EvaluatorError>>()?,
+                    _ => {
+                        return Err(EvaluatorError::BadFunctionDefinition(
+                            "Args to functions must be a list of symbols.".to_string(),
+                        ))
+                    }
                 };
 
-                Ok(Expr::Value(Value::NIL))
+                let body: Vec<Expr> = body_raw
+                    .iter()
+                    .map(|e| Expr::clone(e))
+                    .collect::<Vec<Expr>>();
+
+                Ok(Expr::Function(UserDefinedFunction::new(args, body)))
             }
             _ => todo!(),
         }

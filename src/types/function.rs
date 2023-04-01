@@ -5,6 +5,7 @@ use super::{
     userfunctions::UserDefinedFunction, Expr,
 };
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum Function {
     Builtin(BuiltinFunction),
     UserDefined(UserDefinedFunction),
