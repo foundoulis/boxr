@@ -27,3 +27,8 @@ linefeed = "0.6.0"
 log = "0.4.17"
 mutants = "0.0.3"
 regex = "1.7.2"
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "link-arg=-fuse-ld=mold",
+]
