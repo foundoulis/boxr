@@ -130,11 +130,7 @@ impl BuiltinFunction {
             None
         }
     }
-    pub fn call(
-        &self,
-        args: Vec<Cons>,
-        _stg: &mut LexicalVarStorage,
-    ) -> Result<Cons, EvaluatorError> {
+    pub fn call(&self, args: Vec<Cons>) -> Result<Cons, EvaluatorError> {
         match *self {
             BuiltinFunction::Add => {
                 let mut sum = 0.0;

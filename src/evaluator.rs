@@ -84,7 +84,7 @@ fn lisp_eval_int(
                     // All functions eval their args before they start.
                     let evaled_args: Result<Vec<Cons>, EvaluatorError> =
                         expr.cdr().into_iter().map(|c| lisp_eval(&c, stg)).collect();
-                    return Ok(EvalReturnType::CONS(f.call(evaled_args?, &mut stg.fork())?));
+                    return Ok(EvalReturnType::CONS(f.call(evaled_args?)?));
                 }
             },
         };
