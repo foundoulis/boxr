@@ -14,4 +14,5 @@ pub enum EvaluatorError {
     UncallableType(String),
     BadFunctionDefinition(String),
     InvalidArgument(String),
+    ReturnedNonCons(String),
 }

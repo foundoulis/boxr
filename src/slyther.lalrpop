@@ -1,35 +1,49 @@
 use std::str::FromStr;
 use std::sync::Arc;
-use crate::types::Value;
-use crate::types::Expr;
+use crate::types::{Cons, ConsValue};
 
 grammar;
 
-pub Exprs: Vec<Arc<Expr>> = {
-    <e:Expr> => vec![e],
-    <e:Expr> <es:Exprs> => {
+// This is how we parse multiple sexpressions at once; returning a vector of them. 
+pub SExpressions: Vec<Arc<Cons>> = {
+    <e:SExpression> => vec![e],
+    <e:SExpression> <es:SExpressions> => {
         let mut res = vec![e];
         res.extend(es);
         res
     },
 };
 
-Expr: Arc<Expr> = {
-    <v:Value> => Arc::new(Expr::Value(v)),
-    "'" <v:Value> => Arc::new(Expr::Value(Value::Quoted(Arc::new(v)))),
-    "(" <e:Exprs> ")" => Arc::new(Expr::List(e)),
-    "'" "(" <e:Exprs> ")" => Arc::new(Expr::QuotedList(e)),
-    "'" "()" => Arc::new(Expr::Value(Value::NIL)),
-    "()" => Arc::new(Expr::Value(Value::NIL)),
+// Here we parse a single SExpression
+SExpression: Arc<Cons> = {
+    // We can take two SExpressions in ()
+    "(" <s:SExpression> <t:SExpressions> ")" => {
+        let mut final_vec = vec![s];
+        for elem in t {
+            final_vec.push(elem);
+        }
+        let mut curr = Cons::Value(ConsValue::NIL);
+        for rev_elem in final_vec.iter().rev() {
+            curr = Cons::Cell(rev_elem.clone(), Arc::new(curr));
+        }
+        Arc::new(curr)
+    },
+    // Quoted SExpressions are also SExpressions
+    "'" <s:SExpression> => Arc::new(Cons::Quoted(s)),
+    // Extra parenthesis don't matter.
+    "(" <s:SExpression> ")" => s,
+    // An atom is an sexpression
+    <a:Atom> => Arc::new(Cons::Value(a))
 };
 
-Value: Value = {
-    <i:Num> => Value::Int(i),
-    <f:Float> => Value::Float(f),
-    <b:Boolean> => Value::Boolean(b),
-    <id:Ident> => Value::Symbol(id),
-    <com:Comment> => Value::Comment(com),
-    <s:LString> => Value::String(s),
+Atom: ConsValue = {
+    <i:Num> => ConsValue::Int(i),
+    <f:Float> => ConsValue::Float(f),
+    <b:Boolean> => ConsValue::Boolean(b),
+    <id:Ident> => ConsValue::Symbol(id),
+    <com:Comment> => ConsValue::Comment(com),
+    <s:LString> => ConsValue::String(s),
+    "'()" => ConsValue::NIL
 };
 
 Num: i64 = <n:r#"-?[0-9]+([0-9]+)?"#> => i64::from_str(n).unwrap();
@@ -43,6 +57,12 @@ Boolean: bool = {
 
 Ident: String = <id:r#"([^.\s'"\(\);0-9\-][^\s'"\(\);]*|\-)"#> => id.to_string();
 
-LString: String = <s:r#""(?:[^"\\]|\\.)*""#> => s.to_string();
+LString: String = <s:r#""(?:[^"\\]|\\.)*""#> => {
+    let string = s.to_string();
+    string[1..(string.len()-1)].to_string()
+};
 
-Comment: String = <com:r#";.*"#> => com.to_string();
+Comment: String = <com:r#";.*"#> => {
+    let comment = com.to_string();
+    comment[1..(comment.len())].to_string()
+};

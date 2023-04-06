@@ -1,96 +1,93 @@
 use crate::{
     errors::EvaluatorError,
     types::{
-        function::{CallableFunction, Function},
+        function::{BuiltinFunction, BuiltinMacro},
         scope::LexicalVarStorage,
     },
-    types::{Expr, Value},
+    types::{Cons, ConsValue},
 };
-use std::sync::Arc;
 
-pub fn lisp_eval(expr: &Expr, stg: &mut LexicalVarStorage) -> Result<Expr, EvaluatorError> {
+pub fn lisp_eval(expr: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
+    match lisp_eval_int(expr, stg) {
+        Ok(EvalReturnType::CONS(c)) => Ok(c),
+        Ok(EvalReturnType::FUNC(f)) => Err(EvaluatorError::ReturnedNonCons(format!(
+            "Function {:?} returned non-cons value",
+            f
+        ))),
+        Ok(EvalReturnType::MACRO(m)) => Err(EvaluatorError::ReturnedNonCons(format!(
+            "Macro {:?} returned non-cons value",
+            m
+        ))),
+        Err(e) => Err(e),
+    }
+}
+
+enum EvalReturnType {
+    CONS(Cons),
+    FUNC(BuiltinFunction),
+    MACRO(BuiltinMacro),
+}
+
+fn lisp_eval_int(
+    expr: &Cons,
+    stg: &mut LexicalVarStorage,
+) -> Result<EvalReturnType, EvaluatorError> {
     log::debug!("Evaluating: {:?}", expr);
     log::debug!("Storage: {:?}", stg);
-    match expr {
-        Expr::Value(value) => match value {
-            Value::NIL => return Ok(Expr::Value(Value::NIL)),
-            Value::String(s) => return Ok(Expr::Value(Value::String(s.clone()))),
-            Value::Boolean(b) => return Ok(Expr::Value(Value::Boolean(*b))),
-            Value::Int(i) => return Ok(Expr::Value(Value::Int(*i))),
-            Value::Float(fl) => return Ok(Expr::Value(Value::Float(*fl))),
-            Value::Quoted(q) => return Ok(Expr::Value(Value::clone(&q))),
-            Value::Comment(_s) => return Ok(Expr::Value(Value::NIL)),
-            Value::Symbol(s) => {
-                if let Some(s) = stg.get(&s) {
-                    return Ok(Expr::clone(s));
-                } else if let Some(func) = stg.get_func(&s) {
-                    return Ok(Expr::Function(func.clone()));
-                } else {
-                    return Err(EvaluatorError::UndefinedSymbol(s.clone()));
+    loop {
+        let _expr: Cons = match expr {
+            Cons::Quoted(q) => return Ok(EvalReturnType::CONS(Cons::clone(q))),
+            Cons::Value(value) => match value {
+                ConsValue::NIL => return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::NIL))),
+                ConsValue::Symbol(s) => {
+                    // First look for builtin functions.
+                    if let Some(builtin_func) = BuiltinFunction::get(expr) {
+                        return Ok(EvalReturnType::FUNC(builtin_func));
+                    }
+                    // Then look for builtin macros.
+                    else if let Some(builtin_macro) = BuiltinMacro::get(expr) {
+                        return Ok(EvalReturnType::MACRO(builtin_macro));
+                    }
+                    // Then look for user-defined functions.
+
+                    // Then look for variables.
+                    else {
+                        return Ok(EvalReturnType::CONS(stg[s].clone()));
+                    }
                 }
-            }
-        },
-        Expr::List(list) => {
-            // Grab the name of the function of the list.
-            let first_elem: Expr = Expr::clone(list[0].as_ref());
-
-            // If the first element is not a symbol, return an error.
-            if let Expr::Value(Value::Symbol(ref name)) = first_elem {
-                // Look for builtin functions
-                if let Ok(function) = Function::get(name, stg) {
-                    // Unwrap all the arguments into Exprs.
-                    let mut arguments: Vec<Expr> = Vec::new();
-                    for elem in &list[1..] {
-                        arguments.push(elem.as_ref().clone());
-                    }
-
-                    function.call(name.as_str(), arguments, stg)
-
-                // Look for user defined functions
-                } else if let Some(function) = stg.get_func(&name) {
-                    // Unwrap all the arguments into Exprs.
-                    let mut arguments: Vec<Expr> = Vec::new();
-                    for elem in &list[1..] {
-                        arguments.push(elem.as_ref().clone());
-                    }
-
-                    function.call(name.as_str(), arguments, &mut stg.fork())
-                } else if let Some(anon_func) = stg.get(&name) {
-                    match anon_func {
-                        Expr::Function(func) => {
-                            // Unwrap all the arguments into Exprs.
-                            let mut arguments: Vec<Expr> = Vec::new();
-                            for elem in &list[1..] {
-                                arguments.push(elem.as_ref().clone());
-                            }
-
-                            func.call(name.as_str(), arguments, &mut stg.fork())
-                        }
-                        _ => Err(EvaluatorError::UndefinedSymbol(name.clone())),
-                    }
-                } else {
-                    Err(EvaluatorError::UndefinedSymbol(name.clone()))
+                ConsValue::String(s) => {
+                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::String(
+                        s.clone(),
+                    ))))
                 }
-            } else {
-                return Err(EvaluatorError::NotAFunction(format!(
-                    "Type: {} is not callable.",
-                    Expr::from(first_elem),
-                )));
-            }
-        }
-        Expr::QuotedList(list) => {
-            let reg_list = Expr::List(
-                list.iter()
-                    .map(|a| match a.as_ref() {
-                        Expr::Value(v) => Arc::new(Expr::Value(Value::Quoted(Arc::new(v.clone())))),
-                        Expr::List(l) => Arc::new(Expr::QuotedList(l.clone())),
-                        Expr::QuotedList(l) => Arc::new(Expr::QuotedList(l.clone())),
-                        Expr::Function(func) => Arc::new(Expr::Function(func.clone())),
-                    })
-                    .collect(),
-            );
-            Ok(reg_list)
-        }
-        Expr::Function(func) => Ok(func.call("", vec![expr.clone()], &mut stg.fork())?),
+                ConsValue::Boolean(b) => {
+                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Boolean(*b))))
+                }
+                ConsValue::Int(i) => {
+                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Int(*i))))
+                }
+                ConsValue::Float(fl) => {
+                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Float(*fl))))
+                }
+                ConsValue::Comment(s) => {
+                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Comment(
+                        s.clone(),
+                    ))))
+                }
+            },
+            Cons::Cell(car, _cdr) => match lisp_eval_int(car, stg)? {
+                EvalReturnType::CONS(c) => return Ok(EvalReturnType::CONS(c)),
+                EvalReturnType::MACRO(_m) => {
+                    unimplemented!()
+                    // return Ok(EvalReturnType::CONS(m.call(&expr.cdr(), &mut stg.fork())?));
+                }
+                EvalReturnType::FUNC(f) => {
+                    // All functions eval their args before they start.
+                    let evaled_args: Result<Vec<Cons>, EvaluatorError> =
+                        expr.cdr().into_iter().map(|c| lisp_eval(&c, stg)).collect();
+                    return Ok(EvalReturnType::CONS(f.call(evaled_args?, &mut stg.fork())?));
+                }
+            },
+        };
     }
 }

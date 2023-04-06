@@ -1,4 +1,6 @@
-use boxr::{evaluator::lisp_eval, logger, slyther::ExprsParser, types::scope::LexicalVarStorage};
+use boxr::{
+    evaluator::lisp_eval, logger, slyther::SExpressionsParser, types::scope::LexicalVarStorage,
+};
 use clap::Parser;
 use log::LevelFilter;
 use std::fs;
@@ -20,7 +22,7 @@ fn main() {
     let file: String = fs::read_to_string(&file_name).unwrap();
 
     let mut global_stg = LexicalVarStorage::new();
-    let parser = ExprsParser::new();
+    let parser = SExpressionsParser::new();
     let exprs = parser.parse(&file).unwrap();
 
     for expr in exprs {

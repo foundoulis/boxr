@@ -1,4 +1,6 @@
-use boxr::{evaluator::lisp_eval, logger, slyther::ExprsParser, types::scope::LexicalVarStorage};
+use boxr::{
+    evaluator::lisp_eval, logger, slyther::SExpressionsParser, types::scope::LexicalVarStorage,
+};
 use linefeed::Interface;
 
 #[mutants::skip]
@@ -7,18 +9,17 @@ fn main() {
 
     let reader = Interface::new("boxr").unwrap();
     reader.set_prompt("==> ").unwrap();
-    let parser = ExprsParser::new();
+    let parser = SExpressionsParser::new();
     let mut global_stg = LexicalVarStorage::new();
     loop {
         match reader.read_line().unwrap() {
             linefeed::ReadResult::Input(line) => match parser.parse(&line) {
                 Ok(exprs) => {
                     for expr in exprs {
-                        let result = Some(lisp_eval(&expr, &mut global_stg));
+                        let result = lisp_eval(&expr, &mut global_stg);
                         match result {
-                            Some(Ok(v)) => println!("{}", v),
-                            Some(Err(e)) => log::error!("{:?}", e),
-                            None => {}
+                            Ok(v) => println!("{}", v),
+                            Err(e) => log::error!("{:?}", e),
                         }
                     }
                 }

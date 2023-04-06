@@ -7,788 +7,467 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub slyther);
 
 #[cfg(test)]
-mod test_value_types {
-    use super::types::Expr;
-    use super::types::Value;
+mod test_atoms_ops {
     use std::sync::Arc;
 
     #[test]
-    fn test_value_display() {
-        assert_eq!(format!("{}", Value::Int(1)), "1");
-        assert_eq!(format!("{}", Value::Symbol("a".to_string())), "a");
-        assert_eq!(format!("{}", Value::NIL), "'()");
-        assert_eq!(format!("{}", Value::Quoted(Arc::new(Value::Int(1)))), "'1");
+    fn test_nil() {
+        let nil = super::types::Cons::Value(super::types::ConsValue::NIL);
+        assert_eq!(nil.is_nil(), true);
+        assert_eq!(nil.is_quoted(), false);
     }
 
     #[test]
-    fn test_expr_display() {
-        assert_eq!(format!("{}", Expr::Value(Value::Int(1))), "1");
+    fn test_nil_false() {
+        let nil = super::types::Cons::Value(super::types::ConsValue::Int(123));
+        assert_eq!(nil.is_nil(), false);
+        assert_eq!(nil.is_quoted(), false);
+    }
+
+    #[test]
+    fn test_is_quoted() {
+        let nil = super::types::Cons::Quoted(Arc::new(super::types::Cons::Value(
+            super::types::ConsValue::NIL,
+        )));
+        assert_eq!(nil.is_nil(), false);
+        assert_eq!(nil.is_quoted(), true);
+    }
+
+    #[test]
+    fn test_is_quoted_false() {
+        let nil = super::types::Cons::Value(super::types::ConsValue::Int(123));
+        assert_eq!(nil.is_nil(), false);
+        assert_eq!(nil.is_quoted(), false);
+    }
+
+    #[test]
+    fn test_is_nil_value() {
+        let nil = super::types::ConsValue::NIL;
+        assert_eq!(nil.is_nil(), true);
+    }
+
+    #[test]
+    fn test_is_not_nil_value() {
+        let nil = super::types::ConsValue::Int(123);
+        assert_eq!(nil.is_nil(), false);
+    }
+}
+
+#[cfg(test)]
+mod test_parse_atom {
+
+    #[test]
+    fn test_nil() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("'()");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
         assert_eq!(
-            format!("{}", Expr::Value(Value::Symbol("a".to_string()))),
-            "a"
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::NIL)
         );
-        assert_eq!(format!("{}", Expr::Value(Value::NIL)), "'()");
+    }
+
+    #[test]
+    fn test_int() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("123");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
         assert_eq!(
-            format!("{}", Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
-            "'1"
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Int(123))
         );
+    }
+
+    #[test]
+    fn test_float() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("123.456");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
         assert_eq!(
-            format!(
-                "{}",
-                Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Int(1))),
-                    Arc::new(Expr::Value(Value::Int(2))),
-                ])
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Float(123.456))
+        );
+    }
+
+    #[test]
+    fn test_string() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("\"123\"");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::String("123".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_symbol() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("abc");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Symbol("abc".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_comment() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse(";abc");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Comment("abc".to_string()))
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_parse_cons {
+    use std::sync::Arc;
+
+    #[test]
+    fn test_nil_list() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("'()");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::NIL)
+        );
+    }
+
+    #[test]
+    fn test_value_cons() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("(123)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Int(123))
+        );
+    }
+
+    #[test]
+    fn test_list_many() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("(123 456)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Cell(
+                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
+                Arc::new(super::types::Cons::Cell(
+                    Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(456))),
+                    Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
+                ))
+            )
+        );
+    }
+
+    #[test]
+    fn test_quoted_list_single() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("'(123)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Value(
+                super::types::ConsValue::Int(123)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_quoted_list_double() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("''(123)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Quoted(Arc::new(
+                super::types::Cons::Value(super::types::ConsValue::Int(123))
+            ))))
+        );
+    }
+
+    #[test]
+    fn test_quoted_list_single_many_items() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("'(123 456)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Cell(
+                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
+                Arc::new(super::types::Cons::Cell(
+                    Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(456))),
+                    Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
+                ))
+            )))
+        );
+    }
+
+    #[test]
+    fn test_from_iter_single() {
+        assert_eq!(
+            &super::types::Cons::Cell(
+                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
+                Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
             ),
-            "(1 2)"
-        );
-    }
-}
-
-#[cfg(test)]
-mod test_var_storage {
-    use super::types::scope::LexicalVarStorage;
-    use super::types::Value;
-    use crate::types::Expr;
-
-    #[test]
-    fn test_set_get() {
-        let mut storage = LexicalVarStorage::new();
-        storage.put("a", Expr::Value(Value::Int(1)));
-        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
-    }
-
-    #[test]
-    fn test_fork() {
-        let mut storage = LexicalVarStorage::new();
-        storage.put("a", Expr::Value(Value::Int(1)));
-        let mut fork = storage.fork();
-        fork.put("b", Expr::Value(Value::Int(2)));
-        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
-        assert_eq!(storage.get("b"), None);
-        assert_eq!(fork.get("a"), Some(&Expr::Value(Value::Int(1))));
-        assert_eq!(fork.get("b"), Some(&Expr::Value(Value::Int(2))));
-    }
-}
-
-#[cfg(test)]
-mod test_parsing {
-    use super::slyther::ExprsParser;
-    use super::types::{Expr, Value};
-    use std::sync::Arc;
-
-    #[test]
-    fn test_parsing() {
-        let input = "(+ 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(
-            expr == &Arc::new(Expr::List(vec![
-                Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                Arc::new(Expr::Value(Value::Int(1))),
-                Arc::new(Expr::Value(Value::Int(2))),
-            ]))
+            &super::types::Cons::from_iter(vec![super::types::Cons::Value(
+                super::types::ConsValue::Int(123)
+            )])
         );
     }
 
     #[test]
-    fn test_parsing_nested() {
-        let input = "(+ 1 (+ 2 3))";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(
-            expr == &Arc::new(Expr::List(vec![
-                Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                Arc::new(Expr::Value(Value::Int(1))),
-                Arc::new(Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                    Arc::new(Expr::Value(Value::Int(2))),
-                    Arc::new(Expr::Value(Value::Int(3))),
-                ])),
-            ]))
-        );
-    }
-}
-
-#[cfg(test)]
-mod test_evaluator_simple {
-    use crate::evaluator::lisp_eval;
-    use crate::types::scope::LexicalVarStorage;
-
-    use super::slyther::ExprsParser;
-    use super::types::{Expr, Value};
-    use std::sync::Arc;
-
-    #[test]
-    fn test_evaluator_nil() {
-        let input = "'()";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::NIL)));
-    }
-
-    #[test]
-    fn test_evaluator_int() {
-        let input = "1";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Int(1))));
-    }
-
-    #[test]
-    fn test_evaluator_string() {
-        let input = "\"1\"";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::String("\"1\"".to_string()))));
-    }
-
-    #[test]
-    fn test_evaluator_symbol() {
-        let input = "a";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Symbol("a".to_string()))));
-    }
-
-    #[test]
-    fn test_evaluator_bool() {
-        let input = "#t";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Boolean(true))));
-    }
-
-    #[test]
-    fn test_evaluator_float() {
-        let input = "1.0";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Float(1.0))));
-    }
-
-    #[test]
-    fn test_evaluator_comment() {
-        let input = ";1";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(expr == &Arc::new(Expr::Value(Value::Comment(";1".to_string()))));
-    }
-
-    #[test]
-    fn test_evaluator_quote_int() {
-        let input = "'1";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = lisp_eval(&parsed_input[0], &mut LexicalVarStorage::new());
-        assert!(expr.is_ok());
-        let expr = expr.unwrap();
-        assert!(expr == Expr::Value(Value::Int(1)));
-    }
-
-    #[test]
-    fn test_evaluator_quote_str() {
-        let input = "'\"1\"";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = lisp_eval(&parsed_input[0], &mut LexicalVarStorage::new());
-        assert!(expr.is_ok());
-        let expr = expr.unwrap();
-        assert!(expr == Expr::Value(Value::String("\"1\"".to_string())));
-    }
-
-    #[test]
-    fn test_evaluator_list() {
-        let input = "(+ 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        assert!(
-            expr == &Arc::new(Expr::List(vec![
-                Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                Arc::new(Expr::Value(Value::Int(1))),
-                Arc::new(Expr::Value(Value::Int(2))),
-            ]))
-        );
-    }
-}
-
-#[cfg(test)]
-mod test_evaluator_quotes {
-    use crate::evaluator::lisp_eval;
-    use crate::slyther::ExprsParser;
-    use crate::types::scope::LexicalVarStorage;
-    use crate::types::{Expr, Value};
-    use std::sync::Arc;
-
-    #[test]
-    fn test_quoted_list() {
-        let input = "'(1 2 3)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        println!("{:?}", result);
-        assert!(result.is_ok());
-        let result = result.unwrap();
+    fn test_from_iter_many() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("(123 456 789)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
         assert_eq!(
-            result,
-            Expr::List(vec![
-                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
-                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(2))))),
-                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(3))))),
+            exprs[0].as_ref(),
+            &super::types::Cons::from_iter(vec![
+                super::types::Cons::Value(super::types::ConsValue::Int(123)),
+                super::types::Cons::Value(super::types::ConsValue::Int(456)),
+                super::types::Cons::Value(super::types::ConsValue::Int(789)),
             ])
         );
     }
 
     #[test]
-    fn test_quoted_list_nested() {
-        let input = "'(1 '2 (3 4))";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        println!("{:?}", result);
+    fn test_from_iter_loop() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("(123 456 789)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        let mut iter = super::types::Cons::clone(&exprs[0]).into_iter();
+        assert_eq!(
+            iter.next(),
+            Some(super::types::Cons::Value(super::types::ConsValue::Int(123)))
+        );
+        assert_eq!(
+            iter.next(),
+            Some(super::types::Cons::Value(super::types::ConsValue::Int(456)))
+        );
+        assert_eq!(
+            iter.next(),
+            Some(super::types::Cons::Value(super::types::ConsValue::Int(789)))
+        );
+        assert_eq!(iter.next(), None);
+    }
+}
+
+#[cfg(test)]
+mod test_lexvar_stg {
+    use crate::types::scope::LexicalVarStorage;
+    use crate::types::Cons;
+    use crate::types::ConsValue;
+
+    #[test]
+    fn test_lexvar_stg() {
+        let mut stg = LexicalVarStorage::new();
+        assert_eq!(stg.get("foo"), None);
+        assert_eq!(stg.get("bar"), None);
+        stg.put("foo", Cons::Value(ConsValue::Int(123)));
+        assert_eq!(stg.get("foo"), Some(&Cons::Value(ConsValue::Int(123))));
+        assert_eq!(stg.get("bar"), None);
+        stg.put("bar", Cons::Value(ConsValue::Int(456)));
+        assert_eq!(stg.get("foo"), Some(&Cons::Value(ConsValue::Int(123))));
+        assert_eq!(stg.get("bar"), Some(&Cons::Value(ConsValue::Int(456))));
+    }
+
+    #[test]
+    fn test_lexvar_frk() {
+        let mut stg = LexicalVarStorage::new();
+        stg.put("foo", Cons::Value(ConsValue::Int(123)));
+        stg.put("bar", Cons::Value(ConsValue::Int(456)));
+        let mut stg2 = stg.fork();
+        assert_eq!(stg2.get("foo"), Some(&Cons::Value(ConsValue::Int(123))));
+        assert_eq!(stg2.get("bar"), Some(&Cons::Value(ConsValue::Int(456))));
+        stg2.put("foo", Cons::Value(ConsValue::Int(789)));
+        assert_eq!(stg2.get("foo"), Some(&Cons::Value(ConsValue::Int(789))));
+        assert_eq!(stg2.get("bar"), Some(&Cons::Value(ConsValue::Int(456))));
+        assert_eq!(stg.get("foo"), Some(&Cons::Value(ConsValue::Int(123))));
+        assert_eq!(stg.get("bar"), Some(&Cons::Value(ConsValue::Int(456))));
+    }
+}
+
+#[cfg(test)]
+mod test_eval_atoms {
+    use crate::{evaluator::lisp_eval, types::scope::LexicalVarStorage};
+    use std::sync::Arc;
+
+    #[test]
+    fn test_eval_int() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Value(crate::types::ConsValue::Int(123));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expr);
+    }
+
+    #[test]
+    fn test_eval_str() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Value(crate::types::ConsValue::String("foo".to_string()));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expr);
+    }
+
+    #[test]
+    fn test_eval_float() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Value(crate::types::ConsValue::Float(123.456));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expr);
+    }
+
+    #[test]
+    fn test_eval_bool() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Value(crate::types::ConsValue::Boolean(true));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expr);
+    }
+
+    #[test]
+    fn test_single_quote() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Value(
+            crate::types::ConsValue::Int(123),
+        )));
+        let result = lisp_eval(&expr, &mut stg);
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(
             result,
-            Expr::List(vec![
-                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Int(1))))),
-                Arc::new(Expr::Value(Value::Quoted(Arc::new(Value::Quoted(
-                    Arc::new(Value::Int(2))
-                ))))),
-                Arc::new(Expr::QuotedList(vec![
-                    Arc::new(Expr::Value(Value::Int(3))),
-                    Arc::new(Expr::Value(Value::Int(4))),
-                ])),
+            crate::types::Cons::Value(crate::types::ConsValue::Int(123))
+        );
+    }
+
+    #[test]
+    fn test_multi_quote() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Quoted(Arc::new(
+            crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+        ))));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(
+            result,
+            crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Value(
+                crate::types::ConsValue::Int(123)
+            )))
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_eval_lists {
+    use crate::evaluator::lisp_eval;
+    use std::sync::Arc;
+
+    #[test]
+    fn test_single_quote_list() {
+        let mut stg = crate::types::scope::LexicalVarStorage::new();
+        let expr = crate::types::Cons::Quoted(Arc::new(crate::types::Cons::from_iter(vec![
+            crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+            crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+            crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
+        ])));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(
+            result,
+            crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
             ])
         );
     }
-}
-
-#[cfg(test)]
-mod test_builtin_functions {
-    use crate::{
-        evaluator::lisp_eval,
-        slyther::ExprsParser,
-        types::{scope::LexicalVarStorage, Expr, Value},
-    };
 
     #[test]
-    fn test_add_builtin() {
-        let input = "(+ 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
+    fn test_multi_quote_list() {
+        let mut stg = crate::types::scope::LexicalVarStorage::new();
+        let expr = crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Quoted(Arc::new(
+            crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
+            ]),
+        ))));
+        let result = lisp_eval(&expr, &mut stg);
         assert!(result.is_ok());
         let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(3.0)));
-    }
-
-    #[test]
-    fn test_sub_builtin() {
-        let input = "(- 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(-1.0)));
-    }
-
-    #[test]
-    fn test_mul_builtin() {
-        let input = "(* 1 2 3 4)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(24.0)));
-    }
-
-    #[test]
-    fn test_div_builtin() {
-        let input = "(/ 1 2 3 4)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(0.041666666666666664)));
-    }
-
-    #[test]
-    fn test_floordiv_builtin() {
-        // should add more and better tests for this function.
-        let input = "(floordiv 1 2 3 4)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(0.0)));
-    }
-
-    #[test]
-    fn test_modulus() {
-        let input = "(% 10 3)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(1.0)));
-    }
-
-    #[test]
-    fn test_pow() {
-        let input = "(^ 2 3)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Float(8.0)));
-    }
-
-    #[test]
-    fn test_eq() {
-        let input = "(= 1 1 1 1 1)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-
-        let input = "(= 1 1 1 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(false)));
-    }
-
-    #[test]
-    fn test_neq() {
-        let input = "(!= 1 1 1 1 1)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(false)));
-
-        let input = "(!= 1 1 1 1 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-    }
-
-    #[test]
-    fn test_lt() {
-        let input = "(< 1 2 3 4 5)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-
-        let input = "(< 1 2 3 4 4)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(false)));
-    }
-
-    #[test]
-    fn test_gt() {
-        let input = "(> 5 4 3 2 1)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-
-        let input = "(> 5 4 3 2 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(false)));
-    }
-
-    #[test]
-    fn test_lte() {
-        let input = "(<= 1 2 3 4 5)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-
-        let input = "(<= 1 2 3 4 4)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-    }
-
-    #[test]
-    fn test_gte() {
-        let input = "(>= 5 4 3 2 1)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
-
-        let input = "(>= 5 4 3 2 2)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut LexicalVarStorage::new());
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Expr::Value(Value::Boolean(true)));
+        assert_eq!(
+            result,
+            crate::types::Cons::Quoted(Arc::new(crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
+            ])))
+        );
     }
 }
 
 #[cfg(test)]
-mod test_builtin_macro {
-    use std::sync::Arc;
-
-    use crate::{
-        errors::EvaluatorError,
-        evaluator::lisp_eval,
-        slyther::ExprsParser,
-        types::{scope::LexicalVarStorage, userfunctions::UserDefinedFunction, Expr, Value},
-    };
+mod test_func_built {
+    use crate::evaluator::lisp_eval;
 
     #[test]
-    fn test_define_var() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define a 1)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-        let expr = &parsed_input[0];
-        let result = lisp_eval(expr, &mut storage);
+    fn test_interal_funcs() {
+        let mut stg = crate::types::scope::LexicalVarStorage::new();
+        let expr = crate::types::Cons::from_iter(vec![
+            crate::types::Cons::Value(crate::types::ConsValue::Symbol("+".to_string())),
+            crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+            crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
         assert!(result.is_ok());
-        assert_eq!(storage.get("a"), Some(&Expr::Value(Value::Int(1))));
-    }
-
-    #[test]
-    fn test_define_var_access_var() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define a 1) a";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 2);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Vec<_>>();
-        assert!(results.iter().all(|result| result.is_ok()));
-        let results = results
-            .into_iter()
-            .map(|result| result.unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
-        assert_eq!(results[1], Expr::Value(Value::Int(1)));
-    }
-
-    #[test]
-    fn test_define_var_hard_second_arg() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define a (+ 1 2)) a";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 2);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Vec<_>>();
-        assert!(results.iter().all(|result| result.is_ok()));
-        let results = results
-            .into_iter()
-            .map(|result| result.unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
-        assert_eq!(results[1], Expr::Value(Value::Float(3.0)));
-    }
-
-    #[test]
-    fn test_define_var_second_arg_var() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define a 1) (define b (+ a 10)) b";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 3);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Vec<_>>();
-        assert!(results.iter().all(|result| result.is_ok()));
-        let results = results
-            .into_iter()
-            .map(|result| result.unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(results.len(), 3);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
-        assert_eq!(results[1], Expr::Value(Value::NIL));
-        assert_eq!(results[2], Expr::Value(Value::Float(11.0)));
-    }
-
-    #[test]
-    fn test_define_func() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define (func-name x y z) (body))";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Result<Vec<Expr>, EvaluatorError>>();
-        assert!(results.is_ok());
-        let results = results.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
+        let result = result.unwrap();
         assert_eq!(
-            storage.get_func("func-name"),
-            Some(&UserDefinedFunction::new(
-                vec![
-                    Expr::Value(Value::Symbol("x".to_string())),
-                    Expr::Value(Value::Symbol("y".to_string())),
-                    Expr::Value(Value::Symbol("z".to_string()))
-                ],
-                vec![Expr::List(vec![Arc::new(Expr::Value(Value::Symbol(
-                    "body".to_string()
-                )))])]
-            ))
+            result,
+            crate::types::Cons::Value(crate::types::ConsValue::Int(579))
         );
-    }
-
-    #[test]
-    fn test_define_func_and_call() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define (func-name x y z) (+ x y z))";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Result<Vec<Expr>, EvaluatorError>>();
-        assert!(results.is_ok());
-        let results = results.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
-        assert_eq!(
-            storage.get_func("func-name"),
-            Some(&UserDefinedFunction::new(
-                vec![
-                    Expr::Value(Value::Symbol("x".to_string())),
-                    Expr::Value(Value::Symbol("y".to_string())),
-                    Expr::Value(Value::Symbol("z".to_string()))
-                ],
-                vec![Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
-                ])]
-            ))
-        );
-
-        let input = "(func-name 1 2 3)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 1);
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Result<Vec<Expr>, EvaluatorError>>();
-        println!("{:?}", results);
-        assert!(results.is_ok());
-        let results = results.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0], Expr::Value(Value::Float(6.0)));
-    }
-
-    #[test]
-    fn test_define_func_and_call_and_return() {
-        let mut storage = LexicalVarStorage::new();
-        let input = "(define (func-name x y z) (print x) (+ x y z)) (func-name 1 2 3)";
-        let parsed_input = ExprsParser::new().parse(input);
-        assert!(parsed_input.is_ok());
-        let parsed_input = parsed_input.unwrap();
-        assert_eq!(parsed_input.len(), 2);
-        assert_eq!(
-            parsed_input[0],
-            Arc::new(Expr::List(vec![
-                Arc::new(Expr::Value(Value::Symbol("define".to_string()))),
-                Arc::new(Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Symbol("func-name".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
-                ])),
-                Arc::new(Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Symbol("print".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("x".to_string())))
-                ])),
-                Arc::new(Expr::List(vec![
-                    Arc::new(Expr::Value(Value::Symbol("+".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("x".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("y".to_string()))),
-                    Arc::new(Expr::Value(Value::Symbol("z".to_string())))
-                ]))
-            ]))
-        );
-        assert_eq!(
-            parsed_input[1],
-            Arc::new(Expr::List(vec![
-                Arc::new(Expr::Value(Value::Symbol("func-name".to_string()))),
-                Arc::new(Expr::Value(Value::Int(1))),
-                Arc::new(Expr::Value(Value::Int(2))),
-                Arc::new(Expr::Value(Value::Int(3)))
-            ]))
-        );
-
-        let results = parsed_input
-            .iter()
-            .map(|expr| lisp_eval(expr, &mut storage))
-            .collect::<Result<Vec<Expr>, EvaluatorError>>();
-        println!("{:?}", results);
-        assert!(results.is_ok());
-        let results = results.unwrap();
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0], Expr::Value(Value::NIL));
-        assert_eq!(results[1], Expr::Value(Value::Float(6.0)));
     }
 }

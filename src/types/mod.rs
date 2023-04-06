@@ -1,79 +1,109 @@
-pub mod builtin;
 pub mod function;
-pub mod macros;
 pub mod scope;
-pub mod userfunctions;
 
 use std::{
     fmt::{Display, Error, Formatter},
     sync::Arc,
 };
 
-use self::userfunctions::UserDefinedFunction;
-
 #[derive(Debug, PartialEq, Clone)]
-pub enum Expr {
-    Value(Value),
-    List(Vec<Arc<Expr>>),
-    QuotedList(Vec<Arc<Expr>>),
-    Function(UserDefinedFunction),
+pub enum Cons {
+    Value(ConsValue),
+    Cell(Arc<Cons>, Arc<Cons>),
+    Quoted(Arc<Cons>),
 }
 
-impl FromIterator<Arc<Expr>> for Expr {
-    fn from_iter<T: IntoIterator<Item = Arc<Expr>>>(iter: T) -> Self {
-        Expr::List(iter.into_iter().collect())
+impl Cons {
+    pub fn dequote(&self) -> Cons {
+        match self {
+            Cons::Quoted(q) => q.as_ref().clone(),
+            _ => self.clone(),
+        }
+    }
+    pub fn is_nil(&self) -> bool {
+        match self {
+            Cons::Value(ConsValue::NIL) => true,
+            _ => false,
+        }
+    }
+    pub fn is_quoted(&self) -> bool {
+        match self {
+            Cons::Quoted(_) => true,
+            _ => false,
+        }
+    }
+    pub fn car(&self) -> Cons {
+        match self {
+            Cons::Cell(car, _) => car.as_ref().clone(),
+            _ => Cons::Value(ConsValue::NIL),
+        }
+    }
+    pub fn cdr(&self) -> Cons {
+        match self {
+            Cons::Cell(_, cdr) => cdr.as_ref().clone(),
+            _ => Cons::Value(ConsValue::NIL),
+        }
     }
 }
 
-impl IntoIterator for Expr {
-    type Item = Expr;
-    type IntoIter = std::vec::IntoIter<Expr>;
+impl FromIterator<Cons> for Cons {
+    fn from_iter<T: IntoIterator<Item = Cons>>(iter: T) -> Self {
+        let mut iter = iter.into_iter();
+        match iter.next() {
+            Some(v) => Cons::Cell(Arc::new(v), Arc::new(Cons::from_iter(iter))),
+            None => Cons::Value(ConsValue::NIL),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ConsIter(Arc<Cons>);
+
+impl Iterator for ConsIter {
+    type Item = Cons;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match Cons::clone(&self.0) {
+            Cons::Value(ConsValue::NIL) => None,
+            Cons::Cell(car, cdr) => {
+                self.0 = cdr.clone();
+                Some(Cons::clone(&car))
+            }
+            _ => None,
+        }
+    }
+}
+
+impl IntoIterator for Cons {
+    type Item = Cons;
+    type IntoIter = ConsIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        match self {
-            Expr::List(l) => l
-                .into_iter()
-                .map(|e| Expr::clone(&e))
-                .collect::<Vec<Expr>>()
-                .into_iter(),
-            _ => panic!("Cannot convert non-list expression into iterator."),
-        }
+        ConsIter(Arc::new(self))
     }
 }
 
-impl Display for Expr {
+#[mutants::skip]
+impl Display for Cons {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
-            Expr::Value(v) => write!(f, "{}", v),
-            Expr::List(l) => {
-                write!(f, "(")?;
-                for (i, e) in l.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, " ")?;
-                    }
-                    write!(f, "{}", e)?;
+            Cons::Value(v) => write!(f, "{}", v),
+            Cons::Cell(car, cdr) => {
+                write!(f, "({}", car)?;
+                let rest_of_list = Cons::clone(cdr);
+                for elem in rest_of_list {
+                    write!(f, " {}", elem)?;
                 }
                 write!(f, ")")
             }
-            Expr::QuotedList(l) => {
-                write!(f, "'(")?;
-                for (i, e) in l.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, " ")?;
-                    }
-                    write!(f, "{}", e)?;
-                }
-                write!(f, ")")
-            }
-            Expr::Function(func) => write!(f, "{:?}", func),
+            Cons::Quoted(q) => write!(f, "'{}", q),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Value {
+pub enum ConsValue {
     NIL,
-    Quoted(Arc<Value>),
     Symbol(String),
     String(String),
     Boolean(bool),
@@ -82,17 +112,26 @@ pub enum Value {
     Comment(String),
 }
 
-impl Display for Value {
+impl ConsValue {
+    pub fn is_nil(&self) -> bool {
+        match self {
+            ConsValue::NIL => true,
+            _ => false,
+        }
+    }
+}
+
+#[mutants::skip]
+impl Display for ConsValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
-            Value::NIL => write!(f, "'()"),
-            Value::Symbol(s) => write!(f, "{}", s),
-            Value::String(s) => write!(f, "\"{}\"", s),
-            Value::Boolean(b) => write!(f, "{}", b),
-            Value::Int(i) => write!(f, "{}", i),
-            Value::Float(fl) => write!(f, "{}", fl),
-            Value::Comment(s) => write!(f, "; {}", s),
-            Value::Quoted(q) => write!(f, "'{}", q),
+            ConsValue::NIL => write!(f, "'()"),
+            ConsValue::Symbol(s) => write!(f, "{}", s),
+            ConsValue::String(s) => write!(f, "\"{}\"", s),
+            ConsValue::Boolean(b) => write!(f, "{}", b),
+            ConsValue::Int(i) => write!(f, "{}", i),
+            ConsValue::Float(fl) => write!(f, "{}", fl),
+            ConsValue::Comment(s) => write!(f, "; {}", s),
         }
     }
 }
