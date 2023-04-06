@@ -164,6 +164,17 @@ impl BuiltinFunction {
                 }
             }
             BuiltinFunction::Sub => {
+                if args.len() == 1 {
+                    if let Cons::Value(ConsValue::Float(f)) = &args[0] {
+                        return Ok(Cons::Value(ConsValue::Float(-f)));
+                    } else if let Cons::Value(ConsValue::Int(i)) = &args[0] {
+                        return Ok(Cons::Value(ConsValue::Int(-i)));
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for -".to_string(),
+                        ));
+                    }
+                }
                 let mut sum = 0.0;
                 for (index, arg) in args.iter().enumerate() {
                     if let Cons::Value(ConsValue::Float(f)) = arg {
@@ -218,6 +229,17 @@ impl BuiltinFunction {
                 }
             }
             BuiltinFunction::Div => {
+                if args.len() == 1 {
+                    if let Cons::Value(ConsValue::Int(i)) = &args[0] {
+                        return Ok(Cons::Value(ConsValue::Float(1.0 / *i as f64)));
+                    } else if let Cons::Value(ConsValue::Float(f)) = &args[0] {
+                        return Ok(Cons::Value(ConsValue::Float(1.0 / *f)));
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for /".to_string(),
+                        ));
+                    }
+                }
                 let mut sum = 1.0;
                 for (index, arg) in args.iter().enumerate() {
                     if let Cons::Value(ConsValue::Float(f)) = arg {
@@ -350,31 +372,34 @@ impl BuiltinMacro {
             None
         }
     }
-}
-
-#[derive(Debug)]
-pub struct Function {
-    args: Cons,
-    body: Cons,
-    _environ: LexicalVarStorage,
-}
-
-impl Function {
-    pub fn new(args: Cons, body: Cons, _environ: LexicalVarStorage) -> Self {
-        Self {
-            args,
-            body,
-            _environ,
-        }
-    }
-    pub fn call(_args: Cons) -> Result<Cons, EvaluatorError> {
-        unimplemented!()
+    #[mutants::skip]
+    pub fn call(&self, args: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
+        Ok(Cons::Value(ConsValue::NIL))
     }
 }
+// #[derive(Debug)]
+// pub struct Function {
+//     args: Cons,
+//     body: Cons,
+//     _environ: LexicalVarStorage,
+// }
 
-#[mutants::skip]
-impl Display for Function {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(lambda ({}) {})", self.args, self.body)
-    }
-}
+// impl Function {
+//     pub fn new(args: Cons, body: Cons, _environ: LexicalVarStorage) -> Self {
+//         Self {
+//             args,
+//             body,
+//             _environ,
+//         }
+//     }
+//     pub fn call(_args: Cons) -> Result<Cons, EvaluatorError> {
+//         unimplemented!()
+//     }
+// }
+
+// #[mutants::skip]
+// impl Display for Function {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "(lambda ({}) {})", self.args, self.body)
+//     }
+// }
