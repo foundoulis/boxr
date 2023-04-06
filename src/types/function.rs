@@ -339,6 +339,12 @@ impl BuiltinFunction {
                     Ok(Cons::Value(ConsValue::Float(sum)))
                 }
             }
+            BuiltinFunction::Eq => Ok(Cons::Value(ConsValue::Boolean(
+                args.iter().all(|arg| arg == &args[0]),
+            ))),
+            BuiltinFunction::Neq => Ok(Cons::Value(ConsValue::Boolean(
+                args.iter().any(|arg| arg != &args[0]),
+            ))),
             _ => Ok(Cons::Value(ConsValue::NIL)),
         }
     }
