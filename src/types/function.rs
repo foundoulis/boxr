@@ -138,16 +138,181 @@ impl BuiltinFunction {
         match *self {
             BuiltinFunction::Add => {
                 let mut sum = 0.0;
-                for arg in args {
+                for (index, arg) in args.iter().enumerate() {
                     if let Cons::Value(ConsValue::Float(f)) = arg {
-                        sum += f;
+                        if index == 0 {
+                            sum += f;
+                        } else {
+                            sum += f;
+                        }
                     } else if let Cons::Value(ConsValue::Int(i)) = arg {
-                        sum += i as f64;
+                        if index == 0 {
+                            sum += *i as f64;
+                        } else {
+                            sum += *i as f64;
+                        }
                     } else {
-                        // return Cons::Value(ConsValue::Error(
-                        //     "Invalid argument type for +".to_string(),
-                        // ));
-                        return Ok(Cons::Value(ConsValue::NIL));
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for -".to_string(),
+                        ));
+                    }
+                }
+                if sum.fract() == 0.0 {
+                    Ok(Cons::Value(ConsValue::Int(sum as i64)))
+                } else {
+                    Ok(Cons::Value(ConsValue::Float(sum)))
+                }
+            }
+            BuiltinFunction::Sub => {
+                let mut sum = 0.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum += f;
+                        } else {
+                            sum -= f;
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum += *i as f64;
+                        } else {
+                            sum -= *i as f64;
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for -".to_string(),
+                        ));
+                    }
+                }
+                if sum.fract() == 0.0 {
+                    Ok(Cons::Value(ConsValue::Int(sum as i64)))
+                } else {
+                    Ok(Cons::Value(ConsValue::Float(sum)))
+                }
+            }
+            BuiltinFunction::Mul => {
+                let mut sum = 1.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum *= f;
+                        } else {
+                            sum *= f;
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum *= *i as f64;
+                        } else {
+                            sum *= *i as f64;
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for *".to_string(),
+                        ));
+                    }
+                }
+                if sum.fract() == 0.0 {
+                    Ok(Cons::Value(ConsValue::Int(sum as i64)))
+                } else {
+                    Ok(Cons::Value(ConsValue::Float(sum)))
+                }
+            }
+            BuiltinFunction::Div => {
+                let mut sum = 1.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum *= f;
+                        } else {
+                            sum /= f;
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum *= *i as f64;
+                        } else {
+                            sum /= *i as f64;
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for /".to_string(),
+                        ));
+                    }
+                }
+                if sum.fract() == 0.0 {
+                    Ok(Cons::Value(ConsValue::Int(sum as i64)))
+                } else {
+                    Ok(Cons::Value(ConsValue::Float(sum)))
+                }
+            }
+            BuiltinFunction::FloorDiv => {
+                let mut sum = 1.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum *= f;
+                        } else {
+                            sum /= f;
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum *= *i as f64;
+                        } else {
+                            sum /= *i as f64;
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for //".to_string(),
+                        ));
+                    }
+                }
+                Ok(Cons::Value(ConsValue::Int(sum as i64)))
+            }
+            BuiltinFunction::Mod => {
+                let mut sum = 1.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum *= f;
+                        } else {
+                            sum %= f;
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum *= *i as f64;
+                        } else {
+                            sum %= *i as f64;
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for %".to_string(),
+                        ));
+                    }
+                }
+                if sum.fract() == 0.0 {
+                    Ok(Cons::Value(ConsValue::Int(sum as i64)))
+                } else {
+                    Ok(Cons::Value(ConsValue::Float(sum)))
+                }
+            }
+            BuiltinFunction::Pow => {
+                let mut sum = 1.0;
+                for (index, arg) in args.iter().enumerate() {
+                    if let Cons::Value(ConsValue::Float(f)) = arg {
+                        if index == 0 {
+                            sum *= f;
+                        } else {
+                            sum = sum.powf(*f);
+                        }
+                    } else if let Cons::Value(ConsValue::Int(i)) = arg {
+                        if index == 0 {
+                            sum *= *i as f64;
+                        } else {
+                            sum = sum.powf(*i as f64);
+                        }
+                    } else {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for **".to_string(),
+                        ));
                     }
                 }
                 if sum.fract() == 0.0 {

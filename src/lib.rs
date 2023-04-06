@@ -452,22 +452,106 @@ mod test_eval_lists {
 
 #[cfg(test)]
 mod test_func_built {
-    use crate::evaluator::lisp_eval;
+    use crate::{
+        evaluator::lisp_eval,
+        types::{scope::LexicalVarStorage, Cons, ConsValue},
+    };
 
     #[test]
-    fn test_interal_funcs() {
+    fn test_func_add() {
         let mut stg = crate::types::scope::LexicalVarStorage::new();
-        let expr = crate::types::Cons::from_iter(vec![
-            crate::types::Cons::Value(crate::types::ConsValue::Symbol("+".to_string())),
-            crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
-            crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("+".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
         ]);
         let result = lisp_eval(&expr, &mut stg);
         assert!(result.is_ok());
         let result = result.unwrap();
-        assert_eq!(
-            result,
-            crate::types::Cons::Value(crate::types::ConsValue::Int(579))
-        );
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
+    }
+
+    #[test]
+    fn test_func_sub() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("-".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(-333)));
+    }
+
+    #[test]
+    fn test_func_mult() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("*".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(56088)));
+    }
+
+    #[test]
+    fn test_func_div() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("/".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Float(0.26973684210526316)));
+    }
+
+    #[test]
+    fn test_func_floordiv() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("floordiv".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(0)));
+    }
+
+    #[test]
+    fn test_func_mod() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("%".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(123)));
+    }
+
+    #[test]
+    fn test_func_pow() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("^".to_string())),
+            Cons::Value(ConsValue::Int(2)),
+            Cons::Value(ConsValue::Int(2)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(4)));
     }
 }
