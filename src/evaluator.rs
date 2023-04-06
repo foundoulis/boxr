@@ -78,7 +78,7 @@ fn lisp_eval_int(
             Cons::Cell(car, _cdr) => match lisp_eval_int(car, stg)? {
                 EvalReturnType::CONS(c) => return Ok(EvalReturnType::CONS(c)),
                 EvalReturnType::MACRO(m) => {
-                    return Ok(EvalReturnType::CONS(m.call(&expr.cdr(), &mut stg.fork())?));
+                    return Ok(EvalReturnType::CONS(m.call(&expr.cdr(), stg)?));
                 }
                 EvalReturnType::FUNC(f) => {
                     // All functions eval their args before they start.

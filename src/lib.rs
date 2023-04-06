@@ -764,3 +764,55 @@ mod test_func_built {
         assert_eq!(result, Cons::Value(ConsValue::Boolean(false)));
     }
 }
+
+#[cfg(test)]
+mod test_mcro_built {
+    use crate::{
+        evaluator::lisp_eval,
+        types::{scope::LexicalVarStorage, Cons, ConsValue},
+    };
+
+    #[test]
+    fn test_set_define_var_atom() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::Value(ConsValue::Symbol("a".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        let expr = Cons::Value(ConsValue::Symbol("a".to_string()));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(123)));
+    }
+
+    #[test]
+    fn test_set_define_var_eval() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::Value(ConsValue::Symbol("a".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("+".to_string())),
+                Cons::Value(ConsValue::Int(123)),
+                Cons::Value(ConsValue::Int(456)),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        let expr = Cons::Value(ConsValue::Symbol("a".to_string()));
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
+    }
+}

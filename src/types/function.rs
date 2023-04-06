@@ -1,4 +1,4 @@
-use crate::errors::EvaluatorError;
+use crate::{errors::EvaluatorError, evaluator::lisp_eval};
 
 use super::{scope::LexicalVarStorage, Cons, ConsValue};
 
@@ -376,32 +376,63 @@ impl BuiltinMacro {
     }
     #[mutants::skip]
     pub fn call(&self, args: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
+        match *self {
+            BuiltinMacro::Define => {
+                let (name, body) = args.split();
+                if let Cons::Value(ConsValue::Symbol(s)) = name {
+                    let result = lisp_eval(&body, stg)?;
+                    stg.put(&s, result.clone());
+                    Ok(Cons::Value(ConsValue::NIL))
+                } else {
+                    Err(EvaluatorError::InvalidArgument(
+                        "Invalid argument type for define".to_string(),
+                    ))
+                }
+            }
+            _ => Err(EvaluatorError::UndefinedSymbol(
+                "Undefined symbol".to_string(),
+            )),
+        }
+    }
+}
+#[derive(Debug)]
+pub struct UserFunction {
+    args: Cons,
+    body: Cons,
+    environ: LexicalVarStorage,
+}
+
+impl UserFunction {
+    pub fn new(args: Cons, body: Cons, environ: LexicalVarStorage) -> Self {
+        Self {
+            args,
+            body,
+            environ,
+        }
+    }
+    pub fn call(&self, args: Cons) -> Result<Cons, EvaluatorError> {
+        let args = args.into_iter().collect::<Vec<_>>();
+        let mut combined_environment = LexicalVarStorage::new();
+        for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
+            if let Cons::Value(ConsValue::Symbol(s)) = elem {
+                combined_environment.put(&s, args[index].clone());
+            }
+        }
+        for i in Cons::clone(&self.body) {
+            match i.cdr() {
+                Cons::Value(ConsValue::NIL) => return Ok(i.car()),
+                _ => {
+                    lisp_eval(&i.car(), &mut combined_environment)?;
+                }
+            }
+        }
         Ok(Cons::Value(ConsValue::NIL))
     }
 }
-// #[derive(Debug)]
-// pub struct Function {
-//     args: Cons,
-//     body: Cons,
-//     _environ: LexicalVarStorage,
-// }
 
-// impl Function {
-//     pub fn new(args: Cons, body: Cons, _environ: LexicalVarStorage) -> Self {
-//         Self {
-//             args,
-//             body,
-//             _environ,
-//         }
-//     }
-//     pub fn call(_args: Cons) -> Result<Cons, EvaluatorError> {
-//         unimplemented!()
-//     }
-// }
-
-// #[mutants::skip]
-// impl Display for Function {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "(lambda ({}) {})", self.args, self.body)
-//     }
-// }
+#[mutants::skip]
+impl Display for UserFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(lambda ({}) {})", self.args, self.body)
+    }
+}
