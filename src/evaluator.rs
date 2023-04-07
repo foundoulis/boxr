@@ -1,7 +1,7 @@
 use crate::{
     errors::EvaluatorError,
     types::{
-        function::{BuiltinFunction, BuiltinMacro},
+        function::{BuiltinFunction, BuiltinMacro, MacroReturn, UserFunction},
         scope::LexicalVarStorage,
     },
     types::{Cons, ConsValue},
@@ -18,6 +18,10 @@ pub fn lisp_eval(expr: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, Evalu
             "Macro {:?} returned non-cons value",
             m
         ))),
+        Ok(EvalReturnType::USER(u)) => Err(EvaluatorError::ReturnedNonCons(format!(
+            "User function {:?} returned non-cons value",
+            u
+        ))),
         Err(e) => Err(e),
     }
 }
@@ -26,6 +30,7 @@ enum EvalReturnType {
     CONS(Cons),
     FUNC(BuiltinFunction),
     MACRO(BuiltinMacro),
+    USER(UserFunction),
 }
 
 fn lisp_eval_int(
@@ -34,59 +39,52 @@ fn lisp_eval_int(
 ) -> Result<EvalReturnType, EvaluatorError> {
     log::debug!("Evaluating: {:?}", expr);
     log::debug!("Storage: {:?}", stg);
-    loop {
-        let _expr: Cons = match expr {
-            Cons::Quoted(q) => return Ok(EvalReturnType::CONS(Cons::clone(q))),
-            Cons::Value(value) => match value {
-                ConsValue::NIL => return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::NIL))),
-                ConsValue::Symbol(s) => {
-                    // First look for builtin functions.
-                    if let Some(builtin_func) = BuiltinFunction::get(expr) {
-                        return Ok(EvalReturnType::FUNC(builtin_func));
-                    }
-                    // Then look for builtin macros.
-                    else if let Some(builtin_macro) = BuiltinMacro::get(expr) {
-                        return Ok(EvalReturnType::MACRO(builtin_macro));
-                    }
-                    // Then look for user-defined functions.
-
-                    // Then look for variables.
-                    else {
-                        return Ok(EvalReturnType::CONS(stg[s].clone()));
-                    }
+    match expr {
+        Cons::Quoted(q) => Ok(EvalReturnType::CONS(Cons::clone(q))),
+        Cons::Value(value) => match value {
+            ConsValue::NIL => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::NIL))),
+            ConsValue::Symbol(s) => {
+                // First look for builtin functions.
+                if let Some(builtin_func) = BuiltinFunction::get(expr) {
+                    return Ok(EvalReturnType::FUNC(builtin_func));
                 }
-                ConsValue::String(s) => {
-                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::String(
-                        s.clone(),
-                    ))))
+                // Then look for builtin macros.
+                else if let Some(builtin_macro) = BuiltinMacro::get(expr) {
+                    return Ok(EvalReturnType::MACRO(builtin_macro));
                 }
-                ConsValue::Boolean(b) => {
-                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Boolean(*b))))
+                // Then look for user-defined functions.
+                else if let Some(user_func) = stg.get_func(s) {
+                    return Ok(EvalReturnType::USER(user_func.clone()));
                 }
-                ConsValue::Int(i) => {
-                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Int(*i))))
+                // Then look for variables.
+                else {
+                    return Ok(EvalReturnType::CONS(stg[s].clone()));
                 }
-                ConsValue::Float(fl) => {
-                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Float(*fl))))
-                }
-                ConsValue::Comment(s) => {
-                    return Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Comment(
-                        s.clone(),
-                    ))))
-                }
+            }
+            ConsValue::String(s) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::String(
+                s.clone(),
+            )))),
+            ConsValue::Boolean(b) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Boolean(*b)))),
+            ConsValue::Int(i) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Int(*i)))),
+            ConsValue::Float(fl) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Float(*fl)))),
+            ConsValue::Comment(s) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::Comment(
+                s.clone(),
+            )))),
+        },
+        Cons::Cell(car, _cdr) => match lisp_eval_int(car, stg)? {
+            EvalReturnType::CONS(c) => Ok(EvalReturnType::CONS(c)),
+            EvalReturnType::MACRO(m) => match m.call(&expr.cdr(), stg)? {
+                MacroReturn::Value(c) => Ok(EvalReturnType::CONS(c)),
+                MacroReturn::Function(f) => Ok(EvalReturnType::USER(f)),
+                MacroReturn::None => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::NIL))),
             },
-            Cons::Cell(car, _cdr) => match lisp_eval_int(car, stg)? {
-                EvalReturnType::CONS(c) => return Ok(EvalReturnType::CONS(c)),
-                EvalReturnType::MACRO(m) => {
-                    return Ok(EvalReturnType::CONS(m.call(&expr.cdr(), stg)?));
-                }
-                EvalReturnType::FUNC(f) => {
-                    // All functions eval their args before they start.
-                    let evaled_args: Result<Vec<Cons>, EvaluatorError> =
-                        expr.cdr().into_iter().map(|c| lisp_eval(&c, stg)).collect();
-                    return Ok(EvalReturnType::CONS(f.call(evaled_args?)?));
-                }
-            },
-        };
+            EvalReturnType::FUNC(f) => {
+                // All functions eval their args before they start.
+                let evaled_args: Result<Vec<Cons>, EvaluatorError> =
+                    expr.cdr().into_iter().map(|c| lisp_eval(&c, stg)).collect();
+                Ok(EvalReturnType::CONS(f.call(evaled_args?)?))
+            }
+            EvalReturnType::USER(f) => Ok(EvalReturnType::CONS(f.call(expr.cdr())?)),
+        },
     }
 }

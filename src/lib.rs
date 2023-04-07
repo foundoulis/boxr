@@ -815,4 +815,100 @@ mod test_mcro_built {
         let result = result.unwrap();
         assert_eq!(result, Cons::Value(ConsValue::Int(579)));
     }
+
+    #[test]
+    fn test_define_real_func() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("add".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("+".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("add".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
+    }
+
+    #[test]
+    fn test_define_empty_func() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("add".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("add".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+    }
+
+    #[test]
+    fn define_multi_line_func() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("add-then-sub".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("+".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("-".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("add-then-sub".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(-333)));
+    }
 }

@@ -365,6 +365,12 @@ pub enum BuiltinMacro {
     Parse,
 }
 
+pub enum MacroReturn {
+    None,
+    Value(Cons),
+    Function(UserFunction),
+}
+
 impl BuiltinMacro {
     #[mutants::skip]
     pub fn get(symbol: &Cons) -> Option<Self> {
@@ -375,19 +381,45 @@ impl BuiltinMacro {
         }
     }
     #[mutants::skip]
-    pub fn call(&self, args: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
+    pub fn call(
+        &self,
+        args: &Cons,
+        stg: &mut LexicalVarStorage,
+    ) -> Result<MacroReturn, EvaluatorError> {
         match *self {
             BuiltinMacro::Define => {
-                let (name, body) = args.split();
+                let (name, body) = args.split().unwrap();
+                // Here we execute (define x eval-part)
+                // this is both variables and lambda functions (for free)
                 if let Cons::Value(ConsValue::Symbol(s)) = name {
                     let result = lisp_eval(&body, stg)?;
                     stg.put(&s, result.clone());
-                    Ok(Cons::Value(ConsValue::NIL))
+                    Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
+                // Here we execute (define (func-name arg1 ...) (body1) ...)
+                } else if let Some((car, cdr)) = name.split() {
+                    if let Cons::Value(ConsValue::Symbol(s)) = car {
+                        let result = UserFunction::new(cdr.clone(), body.clone(), stg.fork());
+                        stg.put_func(&s, result);
+                        Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
+                    } else {
+                        Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for define".to_string(),
+                        ))
+                    }
+                // Here the definition is poorly designed and doesn't work
                 } else {
                     Err(EvaluatorError::InvalidArgument(
                         "Invalid argument type for define".to_string(),
                     ))
                 }
+            }
+            BuiltinMacro::Lambda => {
+                let (args, body) = args.split().unwrap();
+                Ok(MacroReturn::Function(UserFunction::new(
+                    args.clone(),
+                    body.clone(),
+                    stg.fork(),
+                )))
             }
             _ => Err(EvaluatorError::UndefinedSymbol(
                 "Undefined symbol".to_string(),
@@ -395,7 +427,7 @@ impl BuiltinMacro {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UserFunction {
     args: Cons,
     body: Cons,
@@ -411,28 +443,33 @@ impl UserFunction {
         }
     }
     pub fn call(&self, args: Cons) -> Result<Cons, EvaluatorError> {
-        let args = args.into_iter().collect::<Vec<_>>();
-        let mut combined_environment = LexicalVarStorage::new();
+        let args: Vec<Cons> = args.into_iter().collect();
+        log::debug!("Calling function with args: {:?}", args);
+        let mut combined_environment = self.environ.fork();
         for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
             if let Cons::Value(ConsValue::Symbol(s)) = elem {
                 combined_environment.put(&s, args[index].clone());
             }
         }
+        let mut result = Cons::Value(ConsValue::NIL);
         for i in Cons::clone(&self.body) {
-            match i.cdr() {
-                Cons::Value(ConsValue::NIL) => return Ok(i.car()),
-                _ => {
-                    lisp_eval(&i.car(), &mut combined_environment)?;
-                }
-            }
+            log::debug!("Evaluating user_func: {}", i);
+            result = lisp_eval(&i, &mut combined_environment)?;
         }
-        Ok(Cons::Value(ConsValue::NIL))
+        Ok(result)
+    }
+    pub fn to_cons(&self) -> Cons {
+        Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("lambda".to_string())),
+            self.args.clone(),
+            self.body.clone(),
+        ])
     }
 }
 
 #[mutants::skip]
 impl Display for UserFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(lambda ({}) {})", self.args, self.body)
+        write!(f, "(lambda {} {})", self.args, self.body)
     }
 }

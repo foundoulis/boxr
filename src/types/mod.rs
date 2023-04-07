@@ -44,10 +44,10 @@ impl Cons {
             _ => Cons::Value(ConsValue::NIL),
         }
     }
-    pub fn split(&self) -> (Cons, Cons) {
+    pub fn split(&self) -> Option<(Cons, Cons)> {
         match self {
-            Cons::Cell(car, cdr) => (car.as_ref().clone(), cdr.as_ref().clone()),
-            _ => (Cons::Value(ConsValue::NIL), Cons::Value(ConsValue::NIL)),
+            Cons::Cell(car, cdr) => Some((car.as_ref().clone(), cdr.as_ref().clone())),
+            _ => None,
         }
     }
 }
