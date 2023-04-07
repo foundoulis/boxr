@@ -149,7 +149,7 @@ impl BuiltinFunction {
                         }
                     } else {
                         return Err(EvaluatorError::InvalidArgument(
-                            "Invalid argument type for -".to_string(),
+                            "Invalid argument type for +".to_string(),
                         ));
                     }
                 }
@@ -329,7 +329,7 @@ impl BuiltinFunction {
                         }
                     } else {
                         return Err(EvaluatorError::InvalidArgument(
-                            "Invalid argument type for **".to_string(),
+                            "Invalid argument type for ^".to_string(),
                         ));
                     }
                 }
@@ -444,13 +444,14 @@ impl UserFunction {
     }
     pub fn call(&self, args: Cons) -> Result<Cons, EvaluatorError> {
         let args: Vec<Cons> = args.into_iter().collect();
-        log::debug!("Calling function with args: {:?}", args);
         let mut combined_environment = self.environ.fork();
         for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
             if let Cons::Value(ConsValue::Symbol(s)) = elem {
                 combined_environment.put(&s, args[index].clone());
             }
         }
+        log::debug!("Calling function with args: {:?}", args);
+        log::debug!("Calling function with environ: {:?}", combined_environment);
         let mut result = Cons::Value(ConsValue::NIL);
         for i in Cons::clone(&self.body) {
             log::debug!("Evaluating user_func: {}", i);

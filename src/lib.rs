@@ -876,7 +876,7 @@ mod test_mcro_built {
     }
 
     #[test]
-    fn define_multi_line_func() {
+    fn test_define_multi_line_func() {
         let mut stg = LexicalVarStorage::new();
         let expr = Cons::from_iter(vec![
             Cons::Value(ConsValue::Symbol("define".to_string())),
