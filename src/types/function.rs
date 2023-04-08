@@ -380,7 +380,6 @@ impl BuiltinMacro {
             None
         }
     }
-    #[mutants::skip]
     pub fn call(
         &self,
         args: &Cons,

@@ -911,4 +911,76 @@ mod test_mcro_built {
         let result = result.unwrap();
         assert_eq!(result, Cons::Value(ConsValue::Int(-333)));
     }
+
+    // #[test]
+    fn test_function_in_function() {
+        let mut stg = LexicalVarStorage::new();
+
+        // Create a function that overrides the + function
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("add".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("+".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        // Invoke the new add function
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("add".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
+
+        // Create a function that uses the new add function
+        // As part of its definition
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("addadd".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+            ]),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("add".to_string())),
+                Cons::Value(ConsValue::Symbol("a".to_string())),
+                Cons::Value(ConsValue::Symbol("b".to_string())),
+                Cons::from_iter(vec![
+                    Cons::Value(ConsValue::Symbol("add".to_string())),
+                    Cons::Value(ConsValue::Symbol("a".to_string())),
+                    Cons::Value(ConsValue::Symbol("b".to_string())),
+                ]),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        // Invoke the new addadd function
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("addadd".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(246)));
+    }
 }

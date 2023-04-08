@@ -1,32 +1,52 @@
+use std::path::Path;
+
+use boxr::errors::EvaluatorError;
+use boxr::types::Cons;
 use boxr::{
     evaluator::lisp_eval, logger, slyther::SExpressionsParser, types::scope::LexicalVarStorage,
 };
-use linefeed::Interface;
+use clap::ArgAction;
+use lazy_static::lazy_static;
+use reedline_repl_rs::clap::{Arg, ArgMatches, Command};
+use reedline_repl_rs::Repl;
+
+lazy_static! {
+    static ref PARSER: SExpressionsParser = SExpressionsParser::new();
+}
+
+struct BoxrContext(LexicalVarStorage);
 
 #[mutants::skip]
-fn main() {
-    logger::setup_logger(log::LevelFilter::Debug).unwrap();
+fn parse(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
+    let body: String = args
+        .get_many("body")
+        .unwrap()
+        .into_iter()
+        .map(|s: &String| format!(" {}", s.to_string()))
+        .collect();
+    let ast = PARSER.parse(body.as_str()).unwrap();
+    let result = ast
+        .iter()
+        .map(|s| lisp_eval(s, &mut context.0))
+        .collect::<Result<Vec<Cons>, EvaluatorError>>();
+    Ok(Some(format!("{}", result.unwrap().iter().last().unwrap())))
+}
 
-    let reader = Interface::new("boxr").unwrap();
-    reader.set_prompt("==> ").unwrap();
-    let parser = SExpressionsParser::new();
-    let mut global_stg = LexicalVarStorage::new();
-    loop {
-        match reader.read_line().unwrap() {
-            linefeed::ReadResult::Input(line) => match parser.parse(&line) {
-                Ok(exprs) => {
-                    for expr in exprs {
-                        let result = lisp_eval(&expr, &mut global_stg);
-                        match result {
-                            Ok(v) => println!("{}", v),
-                            Err(e) => log::error!("{:?}", e),
-                        }
-                    }
-                }
-                Err(e) => log::error!("{:?}", e),
-            },
-            linefeed::ReadResult::Eof => break,
-            linefeed::ReadResult::Signal(_) => break,
-        }
-    }
+#[mutants::skip]
+fn main() -> reedline_repl_rs::Result<()> {
+    logger::setup_logger(log::LevelFilter::Info).unwrap();
+
+    let mut repl = Repl::new(BoxrContext(LexicalVarStorage::new()))
+        .with_name("Boxr")
+        .with_version("v0.1.0")
+        .with_description("A Lisp interpreter written in Rust")
+        .with_prompt("==")
+        .with_history(Path::new(".boxr_history").to_path_buf(), 1000)
+        .with_stop_on_ctrl_c(true)
+        .with_stop_on_ctrl_d(true)
+        .with_command(
+            Command::new("eval").arg(Arg::new("body").action(ArgAction::Append)),
+            parse,
+        );
+    repl.run()
 }
