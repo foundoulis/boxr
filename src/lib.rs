@@ -912,7 +912,7 @@ mod test_mcro_built {
         assert_eq!(result, Cons::Value(ConsValue::Int(-333)));
     }
 
-    // #[test]
+    #[test]
     fn test_function_in_function() {
         let mut stg = LexicalVarStorage::new();
 
@@ -981,6 +981,6 @@ mod test_mcro_built {
         println!("{:?}", result);
         assert!(result.is_ok());
         let result = result.unwrap();
-        assert_eq!(result, Cons::Value(ConsValue::Int(246)));
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
     }
 }

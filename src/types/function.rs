@@ -430,23 +430,24 @@ impl BuiltinMacro {
 pub struct UserFunction {
     args: Cons,
     body: Cons,
-    environ: LexicalVarStorage,
+    _environ: LexicalVarStorage,
 }
 
 impl UserFunction {
-    pub fn new(args: Cons, body: Cons, environ: LexicalVarStorage) -> Self {
+    pub fn new(args: Cons, body: Cons, _environ: LexicalVarStorage) -> Self {
         Self {
             args,
             body,
-            environ,
+            _environ,
         }
     }
-    pub fn call(&self, args: Cons) -> Result<Cons, EvaluatorError> {
+    pub fn call(&self, args: Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
         let args: Vec<Cons> = args.into_iter().collect();
-        let mut combined_environment = self.environ.fork();
+        let mut combined_environment = stg.fork();
         for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
             if let Cons::Value(ConsValue::Symbol(s)) = elem {
-                combined_environment.put(&s, args[index].clone());
+                log::debug!("Adding arg: {} = {}", s, args[index]);
+                combined_environment.put(&s, lisp_eval(&args[index], stg)?);
             }
         }
         log::debug!("Calling function with args: {:?}", args);

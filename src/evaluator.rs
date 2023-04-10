@@ -18,10 +18,7 @@ pub fn lisp_eval(expr: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, Evalu
             "Macro {:?} returned non-cons value",
             m
         ))),
-        Ok(EvalReturnType::USER(u)) => Err(EvaluatorError::ReturnedNonCons(format!(
-            "User function {:?} returned non-cons value",
-            u
-        ))),
+        Ok(EvalReturnType::USER(u)) => Ok(u.to_cons()),
         Err(e) => Err(e),
     }
 }
@@ -79,12 +76,17 @@ fn lisp_eval_int(
                 MacroReturn::None => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::NIL))),
             },
             EvalReturnType::FUNC(f) => {
-                // All functions eval their args before they start.
-                let evaled_args: Result<Vec<Cons>, EvaluatorError> =
-                    expr.cdr().into_iter().map(|c| lisp_eval(&c, stg)).collect();
+                // All builtin functions eval their args before they start.
+                let evaled_args: Result<Vec<Cons>, EvaluatorError> = expr
+                    .cdr()
+                    .into_iter()
+                    .map(|c| lisp_eval(&c, &mut stg.fork()))
+                    .collect();
                 Ok(EvalReturnType::CONS(f.call(evaled_args?)?))
             }
-            EvalReturnType::USER(f) => Ok(EvalReturnType::CONS(f.call(expr.cdr())?)),
+            EvalReturnType::USER(f) => {
+                Ok(EvalReturnType::CONS(f.call(expr.cdr(), &mut stg.fork())?))
+            }
         },
     }
 }
