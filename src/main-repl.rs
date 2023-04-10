@@ -17,7 +17,7 @@ lazy_static! {
 struct BoxrContext(LexicalVarStorage);
 
 #[mutants::skip]
-fn parse(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
+fn eval(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
     let body: String = args
         .get_many("body")
         .unwrap()
@@ -30,6 +30,18 @@ fn parse(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Resul
         .map(|s| lisp_eval(s, &mut context.0))
         .collect::<Result<Vec<Cons>, EvaluatorError>>();
     Ok(Some(format!("{}", result.unwrap().iter().last().unwrap())))
+}
+
+#[mutants::skip]
+fn lex(args: ArgMatches, _context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
+    let body: String = args
+        .get_many("body")
+        .unwrap()
+        .into_iter()
+        .map(|s: &String| format!(" {}", s.to_string()))
+        .collect();
+    let ast = PARSER.parse(body.as_str()).unwrap();
+    Ok(Some(format!("{:?}", ast)))
 }
 
 #[mutants::skip]
@@ -46,7 +58,11 @@ fn main() -> reedline_repl_rs::Result<()> {
         .with_stop_on_ctrl_d(true)
         .with_command(
             Command::new("eval").arg(Arg::new("body").action(ArgAction::Append)),
-            parse,
+            eval,
+        )
+        .with_command(
+            Command::new("lex").arg(Arg::new("body").action(ArgAction::Append)),
+            lex,
         );
     repl.run()
 }
