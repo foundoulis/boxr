@@ -345,6 +345,134 @@ impl BuiltinFunction {
             BuiltinFunction::Neq => Ok(Cons::Value(ConsValue::Boolean(
                 args.iter().any(|arg| arg != &args[0]),
             ))),
+            BuiltinFunction::Lt => {
+                for (left, right) in args.iter().zip(args.iter().skip(1)) {
+                    match (left, right) {
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if l >= r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if l >= r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if *l as f64 >= *r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if *l >= *r as f64 {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        _ => {
+                            return Err(EvaluatorError::InvalidArgument(
+                                "Invalid argument type for <".to_string(),
+                            ))
+                        }
+                    }
+                }
+                Ok(Cons::Value(ConsValue::Boolean(true)))
+            }
+            BuiltinFunction::Gt => {
+                for (left, right) in args.iter().zip(args.iter().skip(1)) {
+                    match (left, right) {
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if l <= r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if l <= r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if *l as f64 <= *r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if *l <= *r as f64 {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        _ => {
+                            return Err(EvaluatorError::InvalidArgument(
+                                "Invalid argument type for >".to_string(),
+                            ))
+                        }
+                    }
+                }
+                Ok(Cons::Value(ConsValue::Boolean(true)))
+            }
+            BuiltinFunction::Lte => {
+                for (left, right) in args.iter().zip(args.iter().skip(1)) {
+                    match (left, right) {
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if l > r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if l > r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if *l as f64 > *r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if *l > *r as f64 {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        _ => {
+                            return Err(EvaluatorError::InvalidArgument(
+                                "Invalid argument type for <=".to_string(),
+                            ))
+                        }
+                    }
+                }
+                Ok(Cons::Value(ConsValue::Boolean(true)))
+            }
+            BuiltinFunction::Gte => {
+                for (left, right) in args.iter().zip(args.iter().skip(1)) {
+                    match (left, right) {
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if l < r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if l < r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Int(l)), Cons::Value(ConsValue::Float(r))) => {
+                            if (*l as f64) < *r {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        (Cons::Value(ConsValue::Float(l)), Cons::Value(ConsValue::Int(r))) => {
+                            if *l < *r as f64 {
+                                return Ok(Cons::Value(ConsValue::Boolean(false)));
+                            }
+                        }
+                        _ => {
+                            return Err(EvaluatorError::InvalidArgument(
+                                "Invalid argument type for >=".to_string(),
+                            ))
+                        }
+                    }
+                }
+                Ok(Cons::Value(ConsValue::Boolean(true)))
+            }
             _ => Ok(Cons::Value(ConsValue::NIL)),
         }
     }
