@@ -799,6 +799,48 @@ mod test_func_built {
     }
 
     #[test]
+    fn test_func_lt_list() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(131415)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(false)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(false)));
+    }
+
+    #[test]
     fn test_func_gt() {
         let mut stg = LexicalVarStorage::new();
         let expr = Cons::from_iter(vec![
@@ -830,6 +872,48 @@ mod test_func_built {
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+    }
+
+    #[test]
+    fn test_func_gt_list() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">".to_string())),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">".to_string())),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(124)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">".to_string())),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(false)));
     }
 
     #[test]
@@ -867,6 +951,48 @@ mod test_func_built {
     }
 
     #[test]
+    fn test_func_lte_list() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<=".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<=".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(131415)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("<=".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(101112)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(false)));
+    }
+
+    #[test]
     fn test_func_gte() {
         let mut stg = LexicalVarStorage::new();
         let expr = Cons::from_iter(vec![
@@ -892,6 +1018,48 @@ mod test_func_built {
         let expr = Cons::from_iter(vec![
             Cons::Value(ConsValue::Symbol(">=".to_string())),
             Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+    }
+
+    #[test]
+    fn test_func_gte_list() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">=".to_string())),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(456)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">=".to_string())),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(124)),
+            Cons::Value(ConsValue::Int(123)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Boolean(true)));
+
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol(">=".to_string())),
+            Cons::Value(ConsValue::Int(131415)),
+            Cons::Value(ConsValue::Int(101112)),
+            Cons::Value(ConsValue::Int(789)),
+            Cons::Value(ConsValue::Int(123)),
             Cons::Value(ConsValue::Int(123)),
         ]);
         let result = lisp_eval(&expr, &mut stg);
