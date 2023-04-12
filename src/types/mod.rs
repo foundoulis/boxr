@@ -137,7 +137,7 @@ impl Display for ConsValue {
             ConsValue::Boolean(b) => write!(f, "{}", b),
             ConsValue::Int(i) => write!(f, "{}", i),
             ConsValue::Float(fl) => write!(f, "{}", fl),
-            ConsValue::Comment(s) => write!(f, "; {}", s),
+            ConsValue::Comment(s) => write!(f, "; {}\n", s),
         }
     }
 }
