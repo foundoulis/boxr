@@ -599,6 +599,6 @@ impl UserFunction {
 #[mutants::skip]
 impl Display for UserFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(lambda {} {})", self.args, self.body)
+        write!(f, "lambda {} {}", self.args, self.body)
     }
 }
