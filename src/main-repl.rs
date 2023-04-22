@@ -46,7 +46,7 @@ fn lex(args: ArgMatches, _context: &mut BoxrContext) -> reedline_repl_rs::Result
 
 #[mutants::skip]
 fn main() -> reedline_repl_rs::Result<()> {
-    logger::setup_logger(log::LevelFilter::Info).unwrap();
+    logger::setup_logger(log::LevelFilter::Debug).unwrap();
 
     let mut repl = Repl::new(BoxrContext(LexicalVarStorage::new()))
         .with_name("Boxr")

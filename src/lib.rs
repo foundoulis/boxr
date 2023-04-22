@@ -1287,4 +1287,29 @@ mod test_mcro_built {
         let result = result.unwrap();
         assert_eq!(result, Cons::Value(ConsValue::Int(579)));
     }
+
+    #[test]
+    fn test_lambda_define() {
+        let mut stg = LexicalVarStorage::new();
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("define".to_string())),
+            Cons::Value(ConsValue::Symbol("add".to_string())),
+            Cons::from_iter(vec![
+                Cons::Value(ConsValue::Symbol("lambda".to_string())),
+                Cons::from_iter(vec![
+                    Cons::Value(ConsValue::Symbol("a".to_string())),
+                    Cons::Value(ConsValue::Symbol("b".to_string())),
+                ]),
+                Cons::from_iter(vec![
+                    Cons::Value(ConsValue::Symbol("+".to_string())),
+                    Cons::Value(ConsValue::Symbol("a".to_string())),
+                    Cons::Value(ConsValue::Symbol("b".to_string())),
+                ]),
+            ]),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::NIL));
+    }
 }
