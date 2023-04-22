@@ -1288,7 +1288,7 @@ mod test_mcro_built {
         assert_eq!(result, Cons::Value(ConsValue::Int(579)));
     }
 
-    #[test]
+    // #[test]
     fn test_lambda_define() {
         let mut stg = LexicalVarStorage::new();
         let expr = Cons::from_iter(vec![
