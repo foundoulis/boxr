@@ -23,14 +23,15 @@ pub fn lisp_eval(expr: &Cons, stg: &mut LexicalVarStorage) -> Result<Cons, Evalu
     }
 }
 
-enum EvalReturnType {
+#[derive(Debug)]
+pub(crate) enum EvalReturnType {
     CONS(Cons),
     FUNC(BuiltinFunction),
     MACRO(BuiltinMacro),
     USER(UserFunction),
 }
 
-fn lisp_eval_int(
+pub(crate) fn lisp_eval_int(
     expr: &Cons,
     stg: &mut LexicalVarStorage,
 ) -> Result<EvalReturnType, EvaluatorError> {
@@ -82,11 +83,10 @@ fn lisp_eval_int(
                     .into_iter()
                     .map(|c| lisp_eval(&c, &mut stg.fork()))
                     .collect();
+                log::debug!("Evaluating function: {:?}", f);
                 Ok(EvalReturnType::CONS(f.call(evaled_args?)?))
             }
-            EvalReturnType::USER(f) => {
-                Ok(EvalReturnType::CONS(f.call(expr.cdr(), &mut stg.fork())?))
-            }
+            EvalReturnType::USER(f) => Ok(f.call(expr.cdr(), &mut stg.fork())?),
         },
     }
 }

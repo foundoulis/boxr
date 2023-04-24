@@ -1,4 +1,7 @@
-use crate::{errors::EvaluatorError, evaluator::lisp_eval};
+use crate::{
+    errors::EvaluatorError,
+    evaluator::{lisp_eval_int, EvalReturnType},
+};
 
 use super::{scope::LexicalVarStorage, Cons, ConsValue};
 
@@ -508,7 +511,7 @@ impl BuiltinMacro {
             None
         }
     }
-    pub fn call(
+    pub(crate) fn call(
         &self,
         args: &Cons,
         stg: &mut LexicalVarStorage,
@@ -516,24 +519,33 @@ impl BuiltinMacro {
         match *self {
             BuiltinMacro::Define => {
                 let (name, body) = args.split().unwrap();
-                // Here we execute (define x eval-part)
-                // this is both variables and lambda functions (for free)
+                // Here we execute (define name body)
+                // this is both variables and lambda functions
                 if let Cons::Value(ConsValue::Symbol(s)) = name {
-                    let result = lisp_eval(&body, stg)?;
-                    stg.put(&s, result.clone());
-                    Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
+                    match lisp_eval_int(&body, stg)? {
+                        EvalReturnType::CONS(c) => {
+                            stg.put(&s, c);
+                            Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
+                        }
+                        EvalReturnType::USER(f) => {
+                            stg.put_func(&s, f);
+                            Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
+                        }
+                        _ => Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument type for define".to_string(),
+                        )),
+                    }
                 // Here we execute (define (func-name arg1 ...) (body1) ...)
                 } else if let Some((car, cdr)) = name.split() {
+                    let uf = UserFunction::new(cdr.clone(), body.clone(), stg.fork());
                     if let Cons::Value(ConsValue::Symbol(s)) = car {
-                        let result = UserFunction::new(cdr.clone(), body.clone(), stg.fork());
-                        stg.put_func(&s, result);
+                        stg.put_func(&s, uf);
                         Ok(MacroReturn::Value(Cons::Value(ConsValue::NIL)))
                     } else {
                         Err(EvaluatorError::InvalidArgument(
                             "Invalid argument type for define".to_string(),
                         ))
                     }
-                // Here the definition is poorly designed and doesn't work
                 } else {
                     Err(EvaluatorError::InvalidArgument(
                         "Invalid argument type for define".to_string(),
@@ -554,6 +566,7 @@ impl BuiltinMacro {
         }
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct UserFunction {
     args: Cons,
@@ -569,21 +582,41 @@ impl UserFunction {
             _environ,
         }
     }
-    pub fn call(&self, args: Cons, stg: &mut LexicalVarStorage) -> Result<Cons, EvaluatorError> {
+    pub(crate) fn call(
+        &self,
+        args: Cons,
+        stg: &mut LexicalVarStorage,
+    ) -> Result<EvalReturnType, EvaluatorError> {
+        println!("Calling function {:?}", self);
+        println!("args: {:?}", args);
         let args: Vec<Cons> = args.into_iter().collect();
+        println!("args: {:?}", args);
         let mut combined_environment = stg.fork();
         for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
             if let Cons::Value(ConsValue::Symbol(s)) = elem {
-                log::debug!("Adding arg: {} = {}", s, args[index]);
-                combined_environment.put(&s, lisp_eval(&args[index], stg)?);
+                log::debug!("Adding arg: {} = {:?}", s, args);
+                match lisp_eval_int(&args[index], stg)? {
+                    EvalReturnType::CONS(c) => {
+                        combined_environment.put(&s, c);
+                    }
+                    EvalReturnType::USER(f) => {
+                        combined_environment.put_func(&s, f);
+                    }
+                    _ => {
+                        return Err(EvaluatorError::InvalidArgument(
+                            "Invalid argument".to_string(),
+                        ))
+                    }
+                }
+                // combined_environment.put(&s, lisp_eval_int(&args[index], stg)?);
             }
         }
         log::debug!("Calling function with args: {:?}", args);
         log::debug!("Calling function with environ: {:?}", combined_environment);
-        let mut result = Cons::Value(ConsValue::NIL);
+        let mut result = EvalReturnType::CONS(Cons::Value(ConsValue::NIL));
         for i in Cons::clone(&self.body) {
             log::debug!("Evaluating user_func: {}", i);
-            result = lisp_eval(&i, &mut combined_environment)?;
+            result = lisp_eval_int(&i, &mut combined_environment)?;
         }
         Ok(result)
     }

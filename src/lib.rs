@@ -1311,5 +1311,16 @@ mod test_mcro_built {
         assert!(result.is_ok());
         let result = result.unwrap();
         assert_eq!(result, Cons::Value(ConsValue::NIL));
+
+        // Invoke the new add function
+        let expr = Cons::from_iter(vec![
+            Cons::Value(ConsValue::Symbol("add".to_string())),
+            Cons::Value(ConsValue::Int(123)),
+            Cons::Value(ConsValue::Int(456)),
+        ]);
+        let result = lisp_eval(&expr, &mut stg);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
     }
 }
