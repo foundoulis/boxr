@@ -22,12 +22,12 @@ lalrpop = "0.19.7"
 [dependencies]
 clap = { version = "4.1.13", features = ["derive"] }
 fern = { version = "0.6.2", features = ["colored"] }
-lalrpop-util = { version = "0.19.7", features = ["lexer"] }
+lalrpop-util = { version = "0.19.10", features = ["lexer"] }
 lazy_static = "1.4.0"
 log = "0.4.17"
 mutants = "0.0.3"
 reedline-repl-rs = "1.0.4"
-regex = "1.7.2"
+regex = "1.8.1"
 
 [target.x86_64-unknown-linux-gnu]
 rustflags = [
