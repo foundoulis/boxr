@@ -12,22 +12,22 @@ mod test_atom_opers {
 
     #[test]
     fn test_nil() {
-        let nil = super::types::Cons::Value(super::types::ConsValue::NIL);
+        let nil = crate::types::Cons::Value(crate::types::ConsValue::NIL);
         assert_eq!(nil.is_nil(), true);
         assert_eq!(nil.is_quoted(), false);
     }
 
     #[test]
     fn test_nil_false() {
-        let nil = super::types::Cons::Value(super::types::ConsValue::Int(123));
+        let nil = crate::types::Cons::Value(crate::types::ConsValue::Int(123));
         assert_eq!(nil.is_nil(), false);
         assert_eq!(nil.is_quoted(), false);
     }
 
     #[test]
     fn test_is_quoted() {
-        let nil = super::types::Cons::Quoted(Arc::new(super::types::Cons::Value(
-            super::types::ConsValue::NIL,
+        let nil = crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Value(
+            crate::types::ConsValue::NIL,
         )));
         assert_eq!(nil.is_nil(), false);
         assert_eq!(nil.is_quoted(), true);
@@ -35,20 +35,20 @@ mod test_atom_opers {
 
     #[test]
     fn test_is_quoted_false() {
-        let nil = super::types::Cons::Value(super::types::ConsValue::Int(123));
+        let nil = crate::types::Cons::Value(crate::types::ConsValue::Int(123));
         assert_eq!(nil.is_nil(), false);
         assert_eq!(nil.is_quoted(), false);
     }
 
     #[test]
     fn test_is_nil_value() {
-        let nil = super::types::ConsValue::NIL;
+        let nil = crate::types::ConsValue::NIL;
         assert_eq!(nil.is_nil(), true);
     }
 
     #[test]
     fn test_is_not_nil_value() {
-        let nil = super::types::ConsValue::Int(123);
+        let nil = crate::types::ConsValue::Int(123);
         assert_eq!(nil.is_nil(), false);
     }
 }
@@ -58,98 +58,98 @@ mod test_parse_atom {
 
     #[test]
     fn test_nil() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("'()");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::NIL)
+            &crate::types::Cons::Value(crate::types::ConsValue::NIL)
         );
     }
 
     #[test]
     fn test_int() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("123");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Int(123))
+            &crate::types::Cons::Value(crate::types::ConsValue::Int(123))
         );
     }
 
     #[test]
     fn test_float() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("123.456");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Float(123.456))
+            &crate::types::Cons::Value(crate::types::ConsValue::Float(123.456))
         );
     }
 
     #[test]
     fn test_string() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("\"123\"");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::String("123".to_string()))
+            &crate::types::Cons::Value(crate::types::ConsValue::String("123".to_string()))
         );
     }
 
     #[test]
     fn test_symbol() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("abc");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Symbol("abc".to_string()))
+            &crate::types::Cons::Value(crate::types::ConsValue::Symbol("abc".to_string()))
         );
     }
 
     #[test]
     fn test_comment() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse(";abc");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Comment("abc".to_string()))
+            &crate::types::Cons::Value(crate::types::ConsValue::Comment("abc".to_string()))
         );
     }
 
     #[test]
     fn test_whitespace_parse() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse(" \t123 \n\r ");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Int(123))
+            &crate::types::Cons::Value(crate::types::ConsValue::Int(123))
         );
     }
 
     #[test]
     fn test_list_with_whitespace_parse() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse(" \t(123 \n 456 \r\t 789 \n 012) \n\r ");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
@@ -159,18 +159,18 @@ mod test_parse_atom {
         assert_eq!(list.is_nil(), false);
         assert_eq!(
             list,
-            &super::types::Cons::from_iter(vec![
-                super::types::Cons::Value(super::types::ConsValue::Int(123)),
-                super::types::Cons::Value(super::types::ConsValue::Int(456)),
-                super::types::Cons::Value(super::types::ConsValue::Int(789)),
-                super::types::Cons::Value(super::types::ConsValue::Int(12)),
+            &crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(12)),
             ])
         );
     }
 
     #[test]
     fn test_list_with_comment_parse() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("(123;abc\n456;def\n789;ghi\n012;jkl\n)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
@@ -180,15 +180,15 @@ mod test_parse_atom {
         assert_eq!(list.is_nil(), false);
         assert_eq!(
             list,
-            &super::types::Cons::from_iter(vec![
-                super::types::Cons::Value(super::types::ConsValue::Int(123)),
-                super::types::Cons::Value(super::types::ConsValue::Comment("abc".to_string())),
-                super::types::Cons::Value(super::types::ConsValue::Int(456)),
-                super::types::Cons::Value(super::types::ConsValue::Comment("def".to_string())),
-                super::types::Cons::Value(super::types::ConsValue::Int(789)),
-                super::types::Cons::Value(super::types::ConsValue::Comment("ghi".to_string())),
-                super::types::Cons::Value(super::types::ConsValue::Int(12)),
-                super::types::Cons::Value(super::types::ConsValue::Comment("jkl".to_string())),
+            &crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Comment("abc".to_string())),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Comment("def".to_string())),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
+                crate::types::Cons::Value(crate::types::ConsValue::Comment("ghi".to_string())),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(12)),
+                crate::types::Cons::Value(crate::types::ConsValue::Comment("jkl".to_string())),
             ])
         );
     }
@@ -200,44 +200,44 @@ mod test_parse_cons {
 
     #[test]
     fn test_nil_list() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("'()");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::NIL)
+            &crate::types::Cons::Value(crate::types::ConsValue::NIL)
         );
     }
 
     #[test]
     fn test_value_cons() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("(123)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Value(super::types::ConsValue::Int(123))
+            &crate::types::Cons::Value(crate::types::ConsValue::Int(123))
         );
     }
 
     #[test]
     fn test_list_many() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("(123 456)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Cell(
-                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
-                Arc::new(super::types::Cons::Cell(
-                    Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(456))),
-                    Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
+            &crate::types::Cons::Cell(
+                Arc::new(crate::types::Cons::Value(crate::types::ConsValue::Int(123))),
+                Arc::new(crate::types::Cons::Cell(
+                    Arc::new(crate::types::Cons::Value(crate::types::ConsValue::Int(456))),
+                    Arc::new(crate::types::Cons::Value(crate::types::ConsValue::NIL))
                 ))
             )
         );
@@ -245,48 +245,48 @@ mod test_parse_cons {
 
     #[test]
     fn test_quoted_list_single() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("'(123)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Value(
-                super::types::ConsValue::Int(123)
+            &crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Value(
+                crate::types::ConsValue::Int(123)
             )))
         );
     }
 
     #[test]
     fn test_quoted_list_double() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("''(123)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Quoted(Arc::new(
-                super::types::Cons::Value(super::types::ConsValue::Int(123))
+            &crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Quoted(Arc::new(
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123))
             ))))
         );
     }
 
     #[test]
     fn test_quoted_list_single_many_items() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("'(123 456)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::Quoted(Arc::new(super::types::Cons::Cell(
-                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
-                Arc::new(super::types::Cons::Cell(
-                    Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(456))),
-                    Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
+            &crate::types::Cons::Quoted(Arc::new(crate::types::Cons::Cell(
+                Arc::new(crate::types::Cons::Value(crate::types::ConsValue::Int(123))),
+                Arc::new(crate::types::Cons::Cell(
+                    Arc::new(crate::types::Cons::Value(crate::types::ConsValue::Int(456))),
+                    Arc::new(crate::types::Cons::Value(crate::types::ConsValue::NIL))
                 ))
             )))
         );
@@ -295,52 +295,52 @@ mod test_parse_cons {
     #[test]
     fn test_from_iter_single() {
         assert_eq!(
-            &super::types::Cons::Cell(
-                Arc::new(super::types::Cons::Value(super::types::ConsValue::Int(123))),
-                Arc::new(super::types::Cons::Value(super::types::ConsValue::NIL))
+            &crate::types::Cons::Cell(
+                Arc::new(crate::types::Cons::Value(crate::types::ConsValue::Int(123))),
+                Arc::new(crate::types::Cons::Value(crate::types::ConsValue::NIL))
             ),
-            &super::types::Cons::from_iter(vec![super::types::Cons::Value(
-                super::types::ConsValue::Int(123)
+            &crate::types::Cons::from_iter(vec![crate::types::Cons::Value(
+                crate::types::ConsValue::Int(123)
             )])
         );
     }
 
     #[test]
     fn test_from_iter_many() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("(123 456 789)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
         assert_eq!(
             exprs[0].as_ref(),
-            &super::types::Cons::from_iter(vec![
-                super::types::Cons::Value(super::types::ConsValue::Int(123)),
-                super::types::Cons::Value(super::types::ConsValue::Int(456)),
-                super::types::Cons::Value(super::types::ConsValue::Int(789)),
+            &crate::types::Cons::from_iter(vec![
+                crate::types::Cons::Value(crate::types::ConsValue::Int(123)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(456)),
+                crate::types::Cons::Value(crate::types::ConsValue::Int(789)),
             ])
         );
     }
 
     #[test]
     fn test_from_iter_loop() {
-        let parser = super::slyther::SExpressionsParser::new();
+        let parser = crate::slyther::SExpressionsParser::new();
         let exprs = parser.parse("(123 456 789)");
         assert!(exprs.is_ok());
         let exprs = exprs.unwrap();
         assert_eq!(exprs.len(), 1);
-        let mut iter = super::types::Cons::clone(&exprs[0]).into_iter();
+        let mut iter = crate::types::Cons::clone(&exprs[0]).into_iter();
         assert_eq!(
             iter.next(),
-            Some(super::types::Cons::Value(super::types::ConsValue::Int(123)))
+            Some(crate::types::Cons::Value(crate::types::ConsValue::Int(123)))
         );
         assert_eq!(
             iter.next(),
-            Some(super::types::Cons::Value(super::types::ConsValue::Int(456)))
+            Some(crate::types::Cons::Value(crate::types::ConsValue::Int(456)))
         );
         assert_eq!(
             iter.next(),
-            Some(super::types::Cons::Value(super::types::ConsValue::Int(789)))
+            Some(crate::types::Cons::Value(crate::types::ConsValue::Int(789)))
         );
         assert_eq!(iter.next(), None);
     }
@@ -348,9 +348,9 @@ mod test_parse_cons {
 
 #[cfg(test)]
 mod test_lexvar_stg {
-    use crate::types::scope::LexicalVarStorage;
     use crate::types::Cons;
     use crate::types::ConsValue;
+    use crate::types::scope::LexicalVarStorage;
 
     #[test]
     fn test_lexvar_stg() {
@@ -513,7 +513,7 @@ mod test_eval_lists {
 mod test_func_built {
     use crate::{
         evaluator::lisp_eval,
-        types::{scope::LexicalVarStorage, Cons, ConsValue},
+        types::{Cons, ConsValue, scope::LexicalVarStorage},
     };
 
     #[test]
@@ -1132,7 +1132,7 @@ mod test_func_built {
 mod test_mcro_built {
     use crate::{
         evaluator::lisp_eval,
-        types::{scope::LexicalVarStorage, Cons, ConsValue},
+        types::{Cons, ConsValue, scope::LexicalVarStorage},
     };
 
     #[test]
