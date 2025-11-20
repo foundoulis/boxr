@@ -1,7 +1,5 @@
 use fern::colors::{Color, ColoredLevelConfig};
 use log::LevelFilter;
-// use log::{debug, error, info, trace, warn};
-use chrono;
 
 pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
