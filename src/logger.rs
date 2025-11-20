@@ -1,6 +1,7 @@
 use fern::colors::{Color, ColoredLevelConfig};
 use log::LevelFilter;
 // use log::{debug, error, info, trace, warn};
+use chrono;
 
 #[mutants::skip]
 pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
@@ -13,8 +14,8 @@ pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "[{:<5}] {}",
-                // chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                "{}[{:<5}] {}",
+                chrono::Local::now().format("[%Y-%m-%d %H:%M:%S]"),
                 colors.color(record.level()),
                 message
             ))

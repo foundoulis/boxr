@@ -44,19 +44,19 @@ pub(crate) fn lisp_eval_int(
             ConsValue::Symbol(s) => {
                 // First look for builtin functions.
                 if let Some(builtin_func) = BuiltinFunction::get(expr) {
-                    return Ok(EvalReturnType::FUNC(builtin_func));
+                    Ok(EvalReturnType::FUNC(builtin_func))
                 }
                 // Then look for builtin macros.
                 else if let Some(builtin_macro) = BuiltinMacro::get(expr) {
-                    return Ok(EvalReturnType::MACRO(builtin_macro));
+                    Ok(EvalReturnType::MACRO(builtin_macro))
                 }
                 // Then look for user-defined functions.
                 else if let Some(user_func) = stg.get_func(s) {
-                    return Ok(EvalReturnType::USER(user_func.clone()));
+                    Ok(EvalReturnType::USER(user_func.clone()))
                 }
                 // Then look for variables.
                 else {
-                    return Ok(EvalReturnType::CONS(stg[s].clone()));
+                    Ok(EvalReturnType::CONS(stg[s].clone()))
                 }
             }
             ConsValue::String(s) => Ok(EvalReturnType::CONS(Cons::Value(ConsValue::String(
@@ -86,7 +86,11 @@ pub(crate) fn lisp_eval_int(
                 log::debug!("Evaluating function: {:?}", f);
                 Ok(EvalReturnType::CONS(f.call(evaled_args?)?))
             }
-            EvalReturnType::USER(f) => Ok(f.call(expr.cdr(), &mut stg.fork())?),
+            EvalReturnType::USER(f) => {
+                log::debug!("Calling user function: {:?}", f);
+                log::debug!("Args: {:?}", expr);
+                Ok(f.call(expr.cdr(), &mut stg.fork())?)
+            }
         },
     }
 }

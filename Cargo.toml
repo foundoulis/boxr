@@ -20,6 +20,7 @@ path = "src/lib.rs"
 lalrpop = "0.19.7"
 
 [dependencies]
+chrono = "0.4.24"
 clap = { version = "4.1.13", features = ["derive"] }
 fern = { version = "0.6.2", features = ["colored"] }
 lalrpop-util = { version = "0.19.10", features = ["lexer"] }

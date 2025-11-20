@@ -535,7 +535,7 @@ impl BuiltinMacro {
                             "Invalid argument type for define".to_string(),
                         )),
                     }
-                // Here we execute (define (func-name arg1 ...) (body1) ...)
+                    // Here we execute (define (func-name arg1 ...) (body1) ...)
                 } else if let Some((car, cdr)) = name.split() {
                     let uf = UserFunction::new(cdr.clone(), body.clone(), stg.fork());
                     if let Cons::Value(ConsValue::Symbol(s)) = car {
@@ -554,6 +554,7 @@ impl BuiltinMacro {
             }
             BuiltinMacro::Lambda => {
                 let (args, body) = args.split().unwrap();
+                log::debug!("Lambda args: {:?}, body: {:?}", args, body);
                 Ok(MacroReturn::Function(UserFunction::new(
                     args.clone(),
                     body.clone(),
@@ -587,10 +588,7 @@ impl UserFunction {
         args: Cons,
         stg: &mut LexicalVarStorage,
     ) -> Result<EvalReturnType, EvaluatorError> {
-        println!("Calling function {:?}", self);
-        println!("args: {:?}", args);
         let args: Vec<Cons> = args.into_iter().collect();
-        println!("args: {:?}", args);
         let mut combined_environment = stg.fork();
         for (index, elem) in Cons::clone(&self.args).into_iter().enumerate() {
             if let Cons::Value(ConsValue::Symbol(s)) = elem {

@@ -7,7 +7,7 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub slyther);
 
 #[cfg(test)]
-mod test_atoms_ops {
+mod test_atom_opers {
     use std::sync::Arc;
 
     #[test]
@@ -131,6 +131,65 @@ mod test_parse_atom {
         assert_eq!(
             exprs[0].as_ref(),
             &super::types::Cons::Value(super::types::ConsValue::Comment("abc".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_whitespace_parse() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse(" \t123 \n\r ");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        assert_eq!(
+            exprs[0].as_ref(),
+            &super::types::Cons::Value(super::types::ConsValue::Int(123))
+        );
+    }
+
+    #[test]
+    fn test_list_with_whitespace_parse() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse(" \t(123 \n 456 \r\t 789 \n 012) \n\r ");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        let list = exprs[0].as_ref();
+        assert_eq!(list.is_quoted(), false);
+        assert_eq!(list.is_nil(), false);
+        assert_eq!(
+            list,
+            &super::types::Cons::from_iter(vec![
+                super::types::Cons::Value(super::types::ConsValue::Int(123)),
+                super::types::Cons::Value(super::types::ConsValue::Int(456)),
+                super::types::Cons::Value(super::types::ConsValue::Int(789)),
+                super::types::Cons::Value(super::types::ConsValue::Int(12)),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_list_with_comment_parse() {
+        let parser = super::slyther::SExpressionsParser::new();
+        let exprs = parser.parse("(123;abc\n456;def\n789;ghi\n012;jkl\n)");
+        assert!(exprs.is_ok());
+        let exprs = exprs.unwrap();
+        assert_eq!(exprs.len(), 1);
+        let list = exprs[0].as_ref();
+        assert_eq!(list.is_quoted(), false);
+        assert_eq!(list.is_nil(), false);
+        assert_eq!(
+            list,
+            &super::types::Cons::from_iter(vec![
+                super::types::Cons::Value(super::types::ConsValue::Int(123)),
+                super::types::Cons::Value(super::types::ConsValue::Comment("abc".to_string())),
+                super::types::Cons::Value(super::types::ConsValue::Int(456)),
+                super::types::Cons::Value(super::types::ConsValue::Comment("def".to_string())),
+                super::types::Cons::Value(super::types::ConsValue::Int(789)),
+                super::types::Cons::Value(super::types::ConsValue::Comment("ghi".to_string())),
+                super::types::Cons::Value(super::types::ConsValue::Int(12)),
+                super::types::Cons::Value(super::types::ConsValue::Comment("jkl".to_string())),
+            ])
         );
     }
 }
@@ -1289,38 +1348,40 @@ mod test_mcro_built {
     }
 
     // #[test]
-    fn test_lambda_define() {
-        let mut stg = LexicalVarStorage::new();
-        let expr = Cons::from_iter(vec![
-            Cons::Value(ConsValue::Symbol("define".to_string())),
-            Cons::Value(ConsValue::Symbol("add".to_string())),
-            Cons::from_iter(vec![
-                Cons::Value(ConsValue::Symbol("lambda".to_string())),
-                Cons::from_iter(vec![
-                    Cons::Value(ConsValue::Symbol("a".to_string())),
-                    Cons::Value(ConsValue::Symbol("b".to_string())),
-                ]),
-                Cons::from_iter(vec![
-                    Cons::Value(ConsValue::Symbol("+".to_string())),
-                    Cons::Value(ConsValue::Symbol("a".to_string())),
-                    Cons::Value(ConsValue::Symbol("b".to_string())),
-                ]),
-            ]),
-        ]);
-        let result = lisp_eval(&expr, &mut stg);
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Cons::Value(ConsValue::NIL));
+    // fn test_lambda_define() {
+    //     let mut stg = LexicalVarStorage::new();
+    //     let expr = Cons::from_iter(vec![
+    //         Cons::Value(ConsValue::Symbol("define".to_string())),
+    //         Cons::Value(ConsValue::Symbol("add".to_string())),
+    //         Cons::from_iter(vec![
+    //             Cons::Value(ConsValue::Symbol("lambda".to_string())),
+    //             Cons::from_iter(vec![
+    //                 Cons::Value(ConsValue::Symbol("a".to_string())),
+    //                 Cons::Value(ConsValue::Symbol("b".to_string())),
+    //             ]),
+    //             Cons::from_iter(vec![
+    //                 Cons::Value(ConsValue::Symbol("+".to_string())),
+    //                 Cons::Value(ConsValue::Symbol("a".to_string())),
+    //                 Cons::Value(ConsValue::Symbol("b".to_string())),
+    //             ]),
+    //         ]),
+    //     ]);
+    //     let result = lisp_eval(&expr, &mut stg);
+    //     assert!(result.is_ok());
+    //     let result = result.unwrap();
+    //     assert_eq!(result, Cons::Value(ConsValue::NIL));
 
-        // Invoke the new add function
-        let expr = Cons::from_iter(vec![
-            Cons::Value(ConsValue::Symbol("add".to_string())),
-            Cons::Value(ConsValue::Int(123)),
-            Cons::Value(ConsValue::Int(456)),
-        ]);
-        let result = lisp_eval(&expr, &mut stg);
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, Cons::Value(ConsValue::Int(579)));
-    }
+    //     println!("{:?}", expr);
+
+    //     // Invoke the new add function
+    //     let expr = Cons::from_iter(vec![
+    //         Cons::Value(ConsValue::Symbol("add".to_string())),
+    //         Cons::Value(ConsValue::Int(123)),
+    //         Cons::Value(ConsValue::Int(456)),
+    //     ]);
+    //     let result = lisp_eval(&expr, &mut stg);
+    //     assert!(result.is_ok());
+    //     let result = result.unwrap();
+    //     assert_eq!(result, Cons::Value(ConsValue::Int(579)));
+    // }
 }

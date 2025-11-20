@@ -55,7 +55,7 @@ Boolean: bool = {
     "#f" => false,
 };
 
-Ident: String = <id:r#"([^.[[:blank:]]'"\(\);0-9\-][^[[:blank:]]'"\(\);]*|\-)"#> => id.to_string();
+Ident: String = <id:r#"([^.[[:space:]]'"\(\);0-9\-][^[[:space:]]'"\(\);]*|\-)"#> => id.to_string();
 
 LString: String = <s:r#""(?:[^"\\]|\\.)*""#> => {
     let string = s.to_string();

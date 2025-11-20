@@ -45,6 +45,14 @@ fn lex(args: ArgMatches, _context: &mut BoxrContext) -> reedline_repl_rs::Result
 }
 
 #[mutants::skip]
+fn print_lvs(
+    _args: ArgMatches,
+    context: &mut BoxrContext,
+) -> reedline_repl_rs::Result<Option<String>> {
+    Ok(Some(format!("{:?}", context.0)))
+}
+
+#[mutants::skip]
 fn main() -> reedline_repl_rs::Result<()> {
     logger::setup_logger(log::LevelFilter::Debug).unwrap();
 
@@ -63,6 +71,11 @@ fn main() -> reedline_repl_rs::Result<()> {
         .with_command(
             Command::new("lex").arg(Arg::new("body").action(ArgAction::Append)),
             lex,
+        )
+        .with_command(
+            Command::new("env"),
+            // Print the lexical variable storage
+            print_lvs,
         );
     repl.run()
 }
