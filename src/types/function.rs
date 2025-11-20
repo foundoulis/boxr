@@ -503,7 +503,6 @@ pub enum MacroReturn {
 }
 
 impl BuiltinMacro {
-    #[mutants::skip]
     pub fn get(symbol: &Cons) -> Option<Self> {
         if let Cons::Value(ConsValue::Symbol(s)) = symbol {
             BUILTINS_MACRO_MAP.get(s.as_str()).copied()
@@ -627,7 +626,6 @@ impl UserFunction {
     }
 }
 
-#[mutants::skip]
 impl Display for UserFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "lambda {} {}", self.args, self.body)

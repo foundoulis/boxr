@@ -89,7 +89,6 @@ impl IntoIterator for Cons {
     }
 }
 
-#[mutants::skip]
 impl Display for Cons {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
@@ -127,7 +126,6 @@ impl ConsValue {
     }
 }
 
-#[mutants::skip]
 impl Display for ConsValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {

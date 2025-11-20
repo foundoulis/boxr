@@ -3,7 +3,6 @@ use log::LevelFilter;
 // use log::{debug, error, info, trace, warn};
 use chrono;
 
-#[mutants::skip]
 pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
         .trace(Color::BrightBlack)

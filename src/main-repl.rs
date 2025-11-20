@@ -16,7 +16,6 @@ lazy_static! {
 
 struct BoxrContext(LexicalVarStorage);
 
-#[mutants::skip]
 fn eval(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
     let body: String = args
         .get_many("body")
@@ -32,7 +31,6 @@ fn eval(args: ArgMatches, context: &mut BoxrContext) -> reedline_repl_rs::Result
     Ok(Some(format!("{}", result.unwrap().iter().last().unwrap())))
 }
 
-#[mutants::skip]
 fn lex(args: ArgMatches, _context: &mut BoxrContext) -> reedline_repl_rs::Result<Option<String>> {
     let body: String = args
         .get_many("body")
@@ -44,7 +42,6 @@ fn lex(args: ArgMatches, _context: &mut BoxrContext) -> reedline_repl_rs::Result
     Ok(Some(format!("{:?}", ast)))
 }
 
-#[mutants::skip]
 fn print_lvs(
     _args: ArgMatches,
     context: &mut BoxrContext,
@@ -52,7 +49,6 @@ fn print_lvs(
     Ok(Some(format!("{:?}", context.0)))
 }
 
-#[mutants::skip]
 fn main() -> reedline_repl_rs::Result<()> {
     logger::setup_logger(log::LevelFilter::Debug).unwrap();
 
