@@ -1,7 +1,7 @@
 [package]
 name = "boxr"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 default-run = "boxrepl"
 
 [[bin]]
@@ -30,6 +30,4 @@ reedline-repl-rs = "1.2.1"
 regex = "1.12.2"
 
 [target.x86_64-unknown-linux-gnu]
-rustflags = [
-    "-C", "link-arg=-fuse-ld=mold",
-]
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
