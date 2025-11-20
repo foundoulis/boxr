@@ -13,8 +13,7 @@ pub fn setup_logger(level: LevelFilter) -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "{}[{:<5}] {}",
-                chrono::Local::now().format("[%Y-%m-%d %H:%M:%S]"),
+                "[{:<5}] {}",
                 colors.color(record.level()),
                 message
             ))
