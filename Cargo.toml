@@ -17,17 +17,17 @@ name = "boxr"
 path = "src/lib.rs"
 
 [build-dependencies]
-lalrpop = "0.19.7"
+lalrpop = "0.19.12"
 
 [dependencies]
-chrono = "0.4.24"
-clap = { version = "4.1.13", features = ["derive"] }
+chrono = "0.4.42"
+clap = { version = "4.5.53", features = ["derive"] }
 fern = { version = "0.6.2", features = ["colored"] }
-lalrpop-util = { version = "0.19.10", features = ["lexer"] }
-lazy_static = "1.4.0"
-log = "0.4.17"
-reedline-repl-rs = "1.0.4"
-regex = "1.8.1"
+lalrpop-util = { version = "0.19.12", features = ["lexer"] }
+lazy_static = "1.5.0"
+log = "0.4.28"
+reedline-repl-rs = "1.2.1"
+regex = "1.12.2"
 
 [target.x86_64-unknown-linux-gnu]
 rustflags = [
